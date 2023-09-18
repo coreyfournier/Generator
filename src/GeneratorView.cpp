@@ -1,5 +1,8 @@
+#pragma once
 #include <string>
 #include <vector>
+
+
 class Pin{
     public:
     int gpio;
