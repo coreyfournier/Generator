@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" href="data:,">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <style>
+            html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}
+            .button { border: none; color: white; text-decoration: none; width: 75px; margin: 2px; cursor: pointer;}
+            .button-off { background-color: #555555;}
+            .button-on { background-color: #4CAF50;}
+        </style>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+       <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js" integrity="sha256-lSjKY0/srUM9BE3dPm+c4fBo1dky2v27Gdjm2uoZaL0=" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <h1>ESP32 Web Server</h1>
+        <div class="container" id="container">
+            <div class='col-sm'>
+            <div class="panel panel-default" >
+                <div class="panel-heading">
+                    <h3 class="panel-title">GPIO Pins</h3>
+                </div>
+                <div class="panel-body" id="pin-body">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+<script>
+$(document).ready(function(){
+    $.getJSON("/data", function(data){
+        var button = "";
+        data.pins.forEach((pin)=>{
+            button += 
+            `   <label for='gpio_${pin.gpio}'>${pin.name}</label>
+                <button class=\"button\ button-${pin.state?'on':'off'}" id='gpio_${pin.gpio}' data-state="${pin.state}" onclick="stateChange(this, ${pin.gpio});">${pin.state?'On':'Off'}</button></p>
+            `;            
+        });
+        $("#pin-body").append(button);
+    });
+});
+
+function stateChange(control, gpio)
+{
+    control = $(control);
+    var newState = !(control.attr("data-state") === "true");
+
+    control.html(".....");
+    $.ajax({
+        type: "POST",
+        url: `/data`,
+        // The key needs to match your method's input parameter (case-sensitive).
+        data: JSON.stringify({
+            gpio: gpio,
+            state: newState
+        }),        
+        contentType: 'application/json',
+        dataType: "json",
+        headers: {
+            "accept": "application/json"
+        },
+        success: function(data){
+            var button = $("#gpio_" + data.gpio);
+            console.log(JSON.stringify(data));
+            if(data.state)
+            {
+                button.addClass("button-on");
+                button.removeClass("button-off");
+                button.html("On");
+            }
+            else
+            {
+                button.addClass("button-off");
+                button.removeClass("button-on");
+                button.html("Off");
+            }
+            
+            //set the new state
+            button.attr("data-state", data.state);
+        },
+        error: function(errMsg) {
+            alert(errMsg);
+        }
+    });
+
+}
+</script>
