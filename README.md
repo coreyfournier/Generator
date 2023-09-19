@@ -1,6 +1,9 @@
 # Setup environment
 Install vs code
 Install platformio plugin. 
+## Native Unit Tests
+You need to install mingw and set the bin folder to the path.
+Download here: https://github.com/niXman/mingw-builds-binaries/releases
 
 ## Wifi
 set ENV_WIFI_PW and ENV_WIFI_SSID in your environment with the ssid and password
