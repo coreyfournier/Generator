@@ -8,16 +8,13 @@
 #include <WiFi.h>
 #include <stdio.h>
 #include <ArduinoJson.h>
-// basic file operations
-#include <iostream>
-#include <fstream>
-#include "FS.h"
-#include "SPIFFS.h"
 #include "GeneratorView.cpp"
 #include "SimpleWeb/DataController.cpp"
+#include "SimpleWeb/IndexController.cpp"
 #include "SimpleWeb/Router.h"
 #include "SimpleWeb/IController.h"
 #include <vector>
+#include "SPIFFS.h"
 
 using namespace std;
 
@@ -33,53 +30,6 @@ SimpleWeb::Router router = SimpleWeb::Router(server);
 const int output26 = 26;
 
 GeneratorView view = GeneratorView();
-
-
-class IndexController : public SimpleWeb::IController
-{
-  void getIndex(WiFiClient& client)
-  {
-    fs::FS fs = SPIFFS;
-    if(SPIFFS.exists("/index.html"))
-    {
-      File file =  fs.open ("/index.html");
-
-      Serial.println("- read from file:");
-      while(file.available())
-      {
-          client.write(file.read());
-      }
-
-      file.close();
-    }
-    else{
-      client.println("Can't find index.html");
-      Serial.println("Can't find index.html");
-    }
-              
-    // The HTTP response ends with another blank line
-    client.println();
-  }
-
-  bool Handler(WiFiClient& client, const String& header)
-  {
-    if(header.indexOf("GET / HTTP/1.1") >= 0)
-    {
-      // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-      // and a content-type so the client knows what's coming, then a blank line:
-      client.println("HTTP/1.1 200 OK");
-      client.println("Content-type:text/html");
-      client.println("Connection: close");
-      client.println(); 
-      
-      getIndex(client);  
-
-      return true;
-    }
-
-    return false;
-  }
-};
 
 void setup() {
   Serial.begin(115200);
@@ -114,10 +64,9 @@ void setup() {
   
   //Controllers must be placed in the order in which they should check the header
   router.AddController(new SimpleWeb::DataController(view));
-  router.AddController(new IndexController());
+  router.AddController(new SimpleWeb::IndexController());
 }
 
 void loop(){
   router.Check();
 }
-
