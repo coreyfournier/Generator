@@ -1,16 +1,21 @@
 #include <stdint.h>
 
-using namespace std;
-
-class VoltageDector
+class VoltageDetector
 {
-
     public:
     /**
-     * Parameter is the function to read the analog pin
-    */
-    VoltageDector(int (*func)(uint8_t), uint8_t gpioPin){
+     * @brief Construct a new Voltage Dector object
+     * 
+     * @param func function to read the analog pin "analogRead"
+     * @param gpioPin A0-A12
+     */
+    VoltageDetector(uint16_t (*func)(uint8_t), uint8_t &gpioPin){
+        
+    }
 
+    bool IsChanged()
+    {
+        return true;
     }
 
 };
