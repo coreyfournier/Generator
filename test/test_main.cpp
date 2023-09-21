@@ -1,5 +1,11 @@
 #include <unity.h>
 #include <string>
+#include <stdint.h>
+#include "Orchestration.cpp"
+#include "VoltageDetector.cpp"
+#include <stdio.h>
+#include <iostream>
+
 using namespace std;
 
 string STR_TO_TEST;
@@ -14,9 +20,42 @@ void tearDown(void) {
     STR_TO_TEST = "";
 }
 
+
 void test_string_substring(void) {
-    TEST_ASSERT_EQUAL_STRING("Hello", "");
+    
+    uint8_t pin1 = 1;
+    uint8_t pin2 = 2;
+
+    class ListnerHandler: public IEvent
+    {
+        public:
+        void Change(Event e)
+        {
+            fprintf(stdout, "gpio_master_test %i", e);
+            std:cout << "gpio_master_test " << e;
+            //Serial.printf("gpio_master_test %i", e);
+        }
+    };
+
+    ListnerHandler *lh = new ListnerHandler();
+    
+    auto analogReader = [] (uint8_t gpioPin) -> uint16_t
+    {
+        return 1;
+    };
+
+    auto o = new Orchestration(analogReader, pin1, pin2, lh);
+
+    //loop for a few times to simulate things happening over time
+    for(int i =0; i< 10; i++)
+    {
+        o->SenseChanges();
+    }
+
+    TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
 }
+
+
 
 int main()
 {
