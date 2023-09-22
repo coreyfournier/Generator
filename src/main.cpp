@@ -14,7 +14,7 @@
 #include "SimpleWeb/Router.h"
 #include "SimpleWeb/IController.h"
 #include <vector>
-#include "SPIFFS.h"
+
 
 using namespace std;
 
@@ -79,14 +79,14 @@ void setup() {
   
   delay(500);
 
-  xTaskCreatePinnedToCore(
-      SensorTaskHandler,   /* Task function. */
-      "SensorTask",     /* name of task. */
-      10000,       /* Stack size of task */
-      NULL,        /* parameter of the task */
-      1,           /* priority of the task */
-      &sensorTask,      /* Task handle to keep track of created task */
-      1);          /* pin task to core 1 */  
+  // xTaskCreatePinnedToCore(
+  //     SensorTaskHandler,   /* Task function. */
+  //     "SensorTask",     /* name of task. */
+  //     10000,       /* Stack size of task */
+  //     NULL,        /* parameter of the task */
+  //     1,           /* priority of the task */
+  //     &sensorTask,      /* Task handle to keep track of created task */
+  //     1);          /* pin task to core 1 */  
 }
 
 void WebsiteTaskHandler(void * pvParameters)
@@ -113,15 +113,20 @@ void WebsiteTaskHandler(void * pvParameters)
 void SensorTaskHandler( void * pvParameters ){
   Serial.println("Sensor task running on core ");
   Serial.println(xPortGetCoreID());
-
+  
   while(true)
   {
-    delay(1000);
-    //Serial.println("Task 2");
-  }
+    delay(2000);
+    //Not sure why A1 isn't 25? or maybe it is???
+    Serial.printf("A1=%i\n", analogReadMilliVolts(A2));    
+  } 
 }
 
-
 void loop(){
-  
+  //I found that if this is in a task, then the website quites responding.
+   while(true)
+  {
+    delay(2000);    
+    Serial.printf("A1=%i\n", analogReadMilliVolts(A2));    
+  }
 }
