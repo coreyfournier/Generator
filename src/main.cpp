@@ -123,10 +123,40 @@ void SensorTaskHandler( void * pvParameters ){
 }
 
 void loop(){
+  auto last = 0;
+  auto peek = 0;
+  auto trough = 0;
+  unsigned long timeAtPeek = 0;
+
   //I found that if this is in a task, then the website quites responding.
    while(true)
   {
-    delay(2000);    
-    Serial.printf("A1=%i\n", analogReadMilliVolts(A2));    
+    auto voltage = analogReadMilliVolts(A2);
+    if(voltage > 180 && voltage < 3139)
+    {
+      Serial.printf("A1=%i\n", voltage);    
+
+      if(last == 0)
+        last = voltage;
+
+      //I reached the peek and now it's going down
+      if(voltage < last)
+      {
+        peek = last;
+        timeAtPeek = millis();
+      }
+      else if(voltage > last)
+      {
+        trough = last;
+        auto period = (millis() - timeAtPeek);
+        if(period > 0)
+        {
+          auto frequency = 1 / period;
+          Serial.printf("period=%u Freq=%u", period, frequency);
+        }
+        else
+          Serial.printf("period=%u", period);
+      }
+    }
   }
 }
