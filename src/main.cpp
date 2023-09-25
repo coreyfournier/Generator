@@ -36,11 +36,14 @@ TaskHandle_t sensorTask;
 void WebsiteTaskHandler( void * pvParameters );
 void SensorTaskHandler( void * pvParameters );
 
+
 void setup() {
   Serial.begin(115200);
   
   //mount the file system
   SPIFFS.begin(true);
+
+  //pinMode(A2, INPUT);
 
   // Initialize the output variables as outputs
   pinMode(output26, OUTPUT);
@@ -66,8 +69,6 @@ void setup() {
   /*Configure all of the GPIO pins*/
   view.pins.push_back(Pin(output26, false, "Start relay"));
 
-  
-
   xTaskCreatePinnedToCore(
         WebsiteTaskHandler,   /* Task function. */
         "Task1",     /* name of task. */
@@ -88,6 +89,8 @@ void setup() {
   //     &sensorTask,      /* Task handle to keep track of created task */
   //     1);          /* pin task to core 1 */  
 }
+
+
 
 void WebsiteTaskHandler(void * pvParameters)
 {
@@ -122,41 +125,45 @@ void SensorTaskHandler( void * pvParameters ){
   } 
 }
 
+float lastValue = 0;
+unsigned long lastChange = 0;
+bool isClimbing = false;
+
 void loop(){
-  auto last = 0;
-  auto peek = 0;
-  auto trough = 0;
-  unsigned long timeAtPeek = 0;
+  float frequency = 0;
+  float period = 0;
+  auto temp = analogReadMilliVolts(A2);    
 
-  //I found that if this is in a task, then the website quites responding.
-   while(true)
+  if(lastValue == 0)
+    lastValue = temp;
+  else
   {
-    auto voltage = analogReadMilliVolts(A2);
-    if(voltage > 180 && voltage < 3139)
+    //It's still climbing
+    if(temp > lastValue)
     {
-      Serial.printf("A1=%i\n", voltage);    
-
-      if(last == 0)
-        last = voltage;
-
-      //I reached the peek and now it's going down
-      if(voltage < last)
+      isClimbing = true;
+    }
+    else //It's falling
+    {
+      //It changed directions
+      if(isClimbing)
       {
-        peek = last;
-        timeAtPeek = millis();
-      }
-      else if(voltage > last)
-      {
-        trough = last;
-        auto period = (millis() - timeAtPeek);
-        if(period > 0)
+        if(lastChange > 0)
         {
-          auto frequency = 1 / period;
-          Serial.printf("period=%u Freq=%u", period, frequency);
+          period = millis() - lastChange;
+          frequency = (1/period)*1000;
+          Serial.printf("%fHz %fms\n", frequency, period);
         }
-        else
-          Serial.printf("period=%u", period);
+
+        isClimbing = false;
+        lastChange = millis();       
       }
     }
+
+    //Serial.printf("A2=%i\n", temp);
+    lastValue = temp;
   }
+  
+  //delay(50);
+
 }
