@@ -27,7 +27,13 @@ WiFiServer server(80);
 
 
 // Assign output variables to GPIO pins
-const int output26 = 26;
+//https://learn.adafruit.com/assets/111179
+const int TransferGPIO = 26; //A0
+const int StartGPIO = 25; //A1
+const int StopGPIO = 34; //A2
+const int L1SenseGPIO = 16; //IO16
+const int L2SenseGPIO = 17; //IO17
+const int GeneratorOnSenseGPIO = 21; //IO21
 
 GeneratorView view = GeneratorView();
 TaskHandle_t webSiteTask;
@@ -42,13 +48,6 @@ void setup() {
   
   //mount the file system
   SPIFFS.begin(true);
-
-  //pinMode(A2, INPUT);
-
-  // Initialize the output variables as outputs
-  pinMode(output26, OUTPUT);
-  // Set outputs to LOW
-  digitalWrite(output26, LOW);
 
   // Connect to Wi-Fi network with SSID and password
   Serial.print("Connecting to ");
@@ -67,7 +66,23 @@ void setup() {
   server.begin();  
 
   /*Configure all of the GPIO pins*/
-  view.pins.push_back(Pin(output26, false, "Start relay"));
+  pinMode(TransferGPIO, OUTPUT);
+  digitalWrite(TransferGPIO, LOW);
+  view.pins.push_back(Pin(TransferGPIO, false, "Transfer"));
+
+  pinMode(StartGPIO, OUTPUT);
+  digitalWrite(StartGPIO, LOW);
+  view.pins.push_back(Pin(StartGPIO, false, "Start Generator"));
+
+  pinMode(StopGPIO, OUTPUT);
+  digitalWrite(StopGPIO, LOW);
+  view.pins.push_back(Pin(StopGPIO, false, "Stop Generator"));
+
+  /* Input pins */
+  pinMode(L1SenseGPIO, INPUT);
+  pinMode(L2SenseGPIO, INPUT);
+  pinMode(GeneratorOnSenseGPIO, INPUT);
+  
 
   xTaskCreatePinnedToCore(
         WebsiteTaskHandler,   /* Task function. */
@@ -80,14 +95,14 @@ void setup() {
   
   delay(500);
 
-  // xTaskCreatePinnedToCore(
-  //     SensorTaskHandler,   /* Task function. */
-  //     "SensorTask",     /* name of task. */
-  //     10000,       /* Stack size of task */
-  //     NULL,        /* parameter of the task */
-  //     1,           /* priority of the task */
-  //     &sensorTask,      /* Task handle to keep track of created task */
-  //     1);          /* pin task to core 1 */  
+  xTaskCreatePinnedToCore(
+      SensorTaskHandler,   /* Task function. */
+      "SensorTask",     /* name of task. */
+      10000,       /* Stack size of task */
+      NULL,        /* parameter of the task */
+      1,           /* priority of the task */
+      &sensorTask,      /* Task handle to keep track of created task */
+      1);          /* pin task to core 1 */  
 }
 
 
@@ -109,7 +124,7 @@ void WebsiteTaskHandler(void * pvParameters)
   {
     router.Check();
     //With out the delay it crashes???? idk
-    delay(50);
+    delay(5);
   }
 }
 
@@ -119,51 +134,29 @@ void SensorTaskHandler( void * pvParameters ){
   
   while(true)
   {
-    delay(2000);
+    delay(4000);
     //Not sure why A1 isn't 25? or maybe it is???
-    Serial.printf("A1=%i\n", analogReadMilliVolts(A2));    
+    Serial.printf("L1=%i\n", digitalRead(L1SenseGPIO));    
+    Serial.printf("L2=%i\n", digitalRead(L2SenseGPIO));    
+    Serial.printf("Gen On=%i\n", digitalRead(GeneratorOnSenseGPIO));    
   } 
 }
 
-float lastValue = 0;
+int lastValue = 0;
 unsigned long lastChange = 0;
 bool isClimbing = false;
 
-void loop(){
+void loop()
+{
+  /*
   float frequency = 0;
   float period = 0;
-  auto temp = analogReadMilliVolts(A2);    
+  //auto temp = analogReadMilliVolts(A2);
+  auto temp = digitalRead(A2);
 
-  if(lastValue == 0)
-    lastValue = temp;
-  else
-  {
-    //It's still climbing
-    if(temp > lastValue)
-    {
-      isClimbing = true;
-    }
-    else //It's falling
-    {
-      //It changed directions
-      if(isClimbing)
-      {
-        if(lastChange > 0)
-        {
-          period = millis() - lastChange;
-          frequency = (1/period)*1000;
-          Serial.printf("%fHz %fms\n", frequency, period);
-        }
+  Serial.printf("A2=%i\n", temp);
 
-        isClimbing = false;
-        lastChange = millis();       
-      }
-    }
-
-    //Serial.printf("A2=%i\n", temp);
-    lastValue = temp;
-  }
-  
-  //delay(50);
-
+  delay(2000);
+  lastValue = temp;
+*/
 }

@@ -43,9 +43,9 @@ namespace SimpleWeb
                 else
                 {
                     if(doc["state"].as<bool>())
-                    digitalWrite(doc["gpio"].as<int>(), HIGH);
+                        digitalWrite(doc["gpio"].as<int>(), HIGH);
                     else
-                    digitalWrite(doc["gpio"].as<int>(), LOW);
+                        digitalWrite(doc["gpio"].as<int>(), LOW);
 
                     // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
                     // and a content-type so the client knows what's coming, then a blank line:
@@ -61,7 +61,7 @@ namespace SimpleWeb
             }
             else if(header.indexOf("GET /data HTTP/1.1") >= 0)
             {   
-                StaticJsonDocument<200> doc;      
+                StaticJsonDocument<300> doc;      
                 // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
                 // and a content-type so the client knows what's coming, then a blank line:
                 client.println("HTTP/1.1 200 OK");
@@ -75,10 +75,10 @@ namespace SimpleWeb
                 for(int i=0; i< _view.pins.size(); i++)
                 {
                     Pin pin = _view.pins[i];
-                    Serial.printf("digitalRead...\n");
+                    Serial.printf("digitalRead... %s %i\n",pin.name.c_str(), pin.gpio);
                     pin.state = (digitalRead(pin.gpio) ==  HIGH);
                     doc["pins"][i]["gpio"] = pin.gpio;
-                    doc["pins"][i]["state"] = (digitalRead(pin.gpio) ==  HIGH);
+                    doc["pins"][i]["state"] = pin.state;
                     doc["pins"][i]["name"] = pin.name;                
                 }                            
                 serializeJson(doc, client);
