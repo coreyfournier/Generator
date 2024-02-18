@@ -34,13 +34,20 @@ const int StopGPIO = 34; //A2
 const int L1SenseGPIO = 16; //IO16
 const int L2SenseGPIO = 17; //IO17
 const int GeneratorOnSenseGPIO = 21; //IO21
+const gpio_int_type_t int_type = GPIO_INTR_ANYEDGE;
+
+static QueueHandle_t tsqueue;
 
 GeneratorView view = GeneratorView();
 TaskHandle_t webSiteTask;
 TaskHandle_t sensorTask;
 
-void WebsiteTaskHandler( void * pvParameters );
-void SensorTaskHandler( void * pvParameters );
+void WebsiteTaskHandler(void * pvParameters );
+void SensorTaskHandler(void * pvParameters );
+void vHandlingTask(void * pvParameters );
+void vANInterruptHandler( void );
+void buttonIntTask(void *pvParameters);
+void gpio_intr_handler();
 
 
 void setup() {
@@ -79,9 +86,31 @@ void setup() {
   view.pins.push_back(Pin(StopGPIO, false, "Stop Generator"));
 
   /* Input pins */
+  gpio_int_type_t tt;
   pinMode(L1SenseGPIO, INPUT);
+  gpio_set_intr_type((gpio_num_t)L1SenseGPIO, GPIO_INTR_HIGH_LEVEL);
   pinMode(L2SenseGPIO, INPUT);
-  pinMode(GeneratorOnSenseGPIO, INPUT);
+  gpio_set_intr_type((gpio_num_t)L2SenseGPIO, GPIO_INTR_HIGH_LEVEL);
+  
+  pinMode(GeneratorOnSenseGPIO, INPUT_PULLDOWN);
+  //gpio_set_intr_type((gpio_num_t)GeneratorOnSenseGPIO, GPIO_INTR_ANYEDGE);
+
+    // gpio_config_t io_conf = {};
+    // io_conf.intr_type = GPIO_INTR_ANYEDGE;
+    // io_conf.mode = GPIO_MODE_INPUT;
+    // io_conf.pin_bit_mask = BIT64(GPIO_NUM_21);
+    // io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    // io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    // gpio_config(&io_conf);
+
+    // esp_err_t  installResponse = gpio_install_isr_service(0);
+    // if(installResponse == ESP_OK)
+    // {
+    //   gpio_isr_handler_add(GPIO_NUM_21, button_isr_handler, NULL);
+    // }
+    // else
+    //   Serial.printf("Failed to install %i\n", installResponse);
+    
   
 
   xTaskCreatePinnedToCore(
@@ -95,17 +124,27 @@ void setup() {
   
   delay(500);
 
+  // xTaskCreatePinnedToCore(
+  //     SensorTaskHandler,   /* Task function. */
+  //     "SensorTask",     /* name of task. */
+  //     10000,       /* Stack size of task */
+  //     NULL,        /* parameter of the task */
+  //     1,           /* priority of the task */
+  //     &sensorTask,      /* Task handle to keep track of created task */
+  //     1);          /* pin task to core 1 */
+  
+  tsqueue = xQueueCreate(2, sizeof(uint32_t));
+
   xTaskCreatePinnedToCore(
-      SensorTaskHandler,   /* Task function. */
-      "SensorTask",     /* name of task. */
+      buttonIntTask,   /* Task function. */
+      "Interupt Task Handler",     /* name of task. */
       10000,       /* Stack size of task */
-      NULL,        /* parameter of the task */
-      1,           /* priority of the task */
+      &tsqueue,        /* parameter of the task */
+      2,           /* priority of the task */
       &sensorTask,      /* Task handle to keep track of created task */
       1);          /* pin task to core 1 */  
+
 }
-
-
 
 void WebsiteTaskHandler(void * pvParameters)
 {
@@ -146,17 +185,38 @@ int lastValue = 0;
 unsigned long lastChange = 0;
 bool isClimbing = false;
 
-void loop()
-{
-  /*
-  float frequency = 0;
-  float period = 0;
-  //auto temp = analogReadMilliVolts(A2);
-  auto temp = digitalRead(A2);
+void loop(){}
 
-  Serial.printf("A2=%i\n", temp);
 
-  delay(2000);
-  lastValue = temp;
+/* This task configures the GPIO interrupt and uses it to tell
+   when the button is pressed.
+
+   The interrupt handler communicates the exact button press time to
+   the task via a queue.
+
+   This is a better example of how to wait for button input!
 */
+void buttonIntTask(void *pvParameters)
+{
+    printf("Waiting for button press interrupt on gpio %d...\r\n", GeneratorOnSenseGPIO);
+    QueueHandle_t *tsqueue = (QueueHandle_t *)pvParameters;
+    //gpio_set_interrupt(GeneratorOnSenseGPIO, int_type, gpio_intr_handler);    
+    attachInterrupt(digitalPinToInterrupt(GeneratorOnSenseGPIO), gpio_intr_handler, CHANGE);
+
+    uint32_t last = 0;
+     while(1) {
+        uint32_t button_ts;
+        xQueueReceive(*tsqueue, &button_ts, portMAX_DELAY);
+        button_ts *= portTICK_PERIOD_MS;
+        if(last < button_ts-200) {
+            printf("Button interrupt fired at %dms\r\n", button_ts);
+            last = button_ts;
+        }
+    }
+}
+
+void gpio_intr_handler()
+{
+    uint32_t now = xTaskGetTickCountFromISR();
+    xQueueSendToBackFromISR(tsqueue, &now, NULL);
 }

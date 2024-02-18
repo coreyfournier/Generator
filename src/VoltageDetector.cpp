@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 
+/// @brief 
 class VoltageDetector
 {
     private:
