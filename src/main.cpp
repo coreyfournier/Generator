@@ -49,6 +49,12 @@ void vANInterruptHandler( void );
 void buttonIntTask(void *pvParameters);
 void gpio_intr_handler();
 
+struct AMessage
+{
+  uint32_t time;
+  int gpio;
+} xMessage;
+
 
 void setup() {
   Serial.begin(115200);
@@ -133,7 +139,9 @@ void setup() {
   //     &sensorTask,      /* Task handle to keep track of created task */
   //     1);          /* pin task to core 1 */
   
-  tsqueue = xQueueCreate(2, sizeof(uint32_t));
+ 
+
+  tsqueue = xQueueCreate(4, sizeof(xMessage));
 
   xTaskCreatePinnedToCore(
       buttonIntTask,   /* Task function. */
@@ -181,6 +189,7 @@ void SensorTaskHandler( void * pvParameters ){
   } 
 }
 
+
 int lastValue = 0;
 unsigned long lastChange = 0;
 bool isClimbing = false;
@@ -205,12 +214,15 @@ void buttonIntTask(void *pvParameters)
 
     uint32_t last = 0;
      while(1) {
-        uint32_t button_ts;
-        xQueueReceive(*tsqueue, &button_ts, portMAX_DELAY);
-        button_ts *= portTICK_PERIOD_MS;
-        if(last < button_ts-200) {
-            printf("Button interrupt fired at %dms\r\n", button_ts);
-            last = button_ts;
+        struct AMessage xRxedStructure, *pxRxedPointer;
+
+        xQueueReceive(*tsqueue, &( xRxedStructure ), portMAX_DELAY);
+
+        xRxedStructure.time *= portTICK_PERIOD_MS;
+
+        if(last < xRxedStructure.time - 200) {
+            printf("Button interrupt fired at %dms by pin %i\r\n", xRxedStructure.time, xRxedStructure.gpio);
+            last = xRxedStructure.time;
         }
     }
 }
@@ -218,5 +230,10 @@ void buttonIntTask(void *pvParameters)
 void gpio_intr_handler()
 {
     uint32_t now = xTaskGetTickCountFromISR();
-    xQueueSendToBackFromISR(tsqueue, &now, NULL);
+    AMessage pxPointerToxMessage;
+
+    pxPointerToxMessage.gpio = 21;
+    pxPointerToxMessage.time = now;
+
+    xQueueSendToBackFromISR(tsqueue, (void *)&pxPointerToxMessage, NULL);
 }
