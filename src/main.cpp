@@ -13,6 +13,7 @@
 #include "SimpleWeb/IndexController.cpp"
 #include "SimpleWeb/Router.h"
 #include "SimpleWeb/IController.h"
+#include "PowerState.cpp"
 #include <vector>
 
 
@@ -31,14 +32,16 @@ WiFiServer server(80);
 const int TransferGPIO = 26; //A0
 const int StartGPIO = 25; //A1
 const int StopGPIO = 34; //A2
-const int L1SenseGPIO = 16; //IO16
-const int L2SenseGPIO = 17; //IO17
-const int GeneratorOnSenseGPIO = 21; //IO21
+//gpio 16 = IO16
+Pin L1OnSense = Pin(16, false, "Utility L1 on/off");
+//gpio 17 = IO17
+Pin L2OnSense = Pin(17, false, "Utility L2 on/off");
+//gpio 21 = IO21
+Pin generatorOnSense = Pin(21, false, "Generator on/off");
 const gpio_int_type_t int_type = GPIO_INTR_ANYEDGE;
 
-static QueueHandle_t tsqueue;
-
 GeneratorView view = GeneratorView();
+PowerState powerState = PowerState();
 TaskHandle_t webSiteTask;
 TaskHandle_t sensorTask;
 
@@ -46,14 +49,9 @@ void WebsiteTaskHandler(void * pvParameters );
 void SensorTaskHandler(void * pvParameters );
 void vHandlingTask(void * pvParameters );
 void vANInterruptHandler( void );
-void buttonIntTask(void *pvParameters);
-void gpio_intr_handler();
-
-struct AMessage
-{
-  uint32_t time;
-  int gpio;
-} xMessage;
+void generatorSenseChange();
+void L1SenseChange();
+void L2SenseChange();
 
 
 void setup() {
@@ -93,12 +91,10 @@ void setup() {
 
   /* Input pins */
   gpio_int_type_t tt;
-  pinMode(L1SenseGPIO, INPUT);
-  gpio_set_intr_type((gpio_num_t)L1SenseGPIO, GPIO_INTR_HIGH_LEVEL);
-  pinMode(L2SenseGPIO, INPUT);
-  gpio_set_intr_type((gpio_num_t)L2SenseGPIO, GPIO_INTR_HIGH_LEVEL);
   
-  pinMode(GeneratorOnSenseGPIO, INPUT_PULLDOWN);
+  pinMode(L1OnSense.gpio, INPUT_PULLDOWN);
+  pinMode(L2OnSense.gpio, INPUT_PULLDOWN);
+  pinMode(generatorOnSense.gpio, INPUT_PULLDOWN);
   //gpio_set_intr_type((gpio_num_t)GeneratorOnSenseGPIO, GPIO_INTR_ANYEDGE);
 
     // gpio_config_t io_conf = {};
@@ -124,7 +120,7 @@ void setup() {
         "Task1",     /* name of task. */
         10000,       /* Stack size of task */
         NULL,        /* parameter of the task */
-        1,           /* priority of the task */
+        2,           /* priority of the task */
         &webSiteTask,      /* Task handle to keep track of created task */
         0);          /* pin task to core 0 */  
   
@@ -138,20 +134,55 @@ void setup() {
   //     1,           /* priority of the task */
   //     &sensorTask,      /* Task handle to keep track of created task */
   //     1);          /* pin task to core 1 */
-  
- 
+   
+  //AMessage xMessage;
 
-  tsqueue = xQueueCreate(4, sizeof(xMessage));
-
+  //tsqueue = xQueueCreate(4, sizeof(xMessage));
+   
   xTaskCreatePinnedToCore(
-      buttonIntTask,   /* Task function. */
-      "Interupt Task Handler",     /* name of task. */
-      10000,       /* Stack size of task */
-      &tsqueue,        /* parameter of the task */
-      2,           /* priority of the task */
-      &sensorTask,      /* Task handle to keep track of created task */
-      1);          /* pin task to core 1 */  
+          PowerState::StateChangeTaskHandler,   /* Task function. */
+          "Interupt Task Handler",     /* name of task. */
+          10000,       /* Stack size of task */
+          &powerState.tsqueue,
+          2,           /* priority of the task */
+          NULL,      /* Task handle to keep track of created task */
+          1);          /* pin task to core 1 */ 
 
+  //Listen for the state changes
+  attachInterrupt(digitalPinToInterrupt(generatorOnSense.gpio), generatorSenseChange, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(L1OnSense.gpio), L1SenseChange, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(L2OnSense.gpio), L2SenseChange, CHANGE);
+  
+}
+
+void generatorSenseChange()
+{
+    uint32_t now = xTaskGetTickCountFromISR();
+    AMessage pxPointerToxMessage;
+
+    pxPointerToxMessage.pin = &generatorOnSense;
+    pxPointerToxMessage.time = now;
+    xQueueSendToBackFromISR(powerState.tsqueue, (void *)&pxPointerToxMessage, NULL);
+}
+
+void L1SenseChange()
+{
+    uint32_t now = xTaskGetTickCountFromISR();
+    AMessage pxPointerToxMessage;
+
+    pxPointerToxMessage.pin = &L1OnSense;
+    pxPointerToxMessage.time = now;
+    xQueueSendToBackFromISR(powerState.tsqueue, (void *)&pxPointerToxMessage, NULL);
+}
+
+void L2SenseChange()
+{
+    uint32_t now = xTaskGetTickCountFromISR();
+    AMessage pxPointerToxMessage;
+
+    pxPointerToxMessage.pin = &L2OnSense;
+    pxPointerToxMessage.time = now;
+    xQueueSendToBackFromISR(powerState.tsqueue, (void *)&pxPointerToxMessage, NULL);
 }
 
 void WebsiteTaskHandler(void * pvParameters)
@@ -175,65 +206,4 @@ void WebsiteTaskHandler(void * pvParameters)
   }
 }
 
-void SensorTaskHandler( void * pvParameters ){
-  Serial.println("Sensor task running on core ");
-  Serial.println(xPortGetCoreID());
-  
-  while(true)
-  {
-    delay(4000);
-    //Not sure why A1 isn't 25? or maybe it is???
-    Serial.printf("L1=%i\n", digitalRead(L1SenseGPIO));    
-    Serial.printf("L2=%i\n", digitalRead(L2SenseGPIO));    
-    Serial.printf("Gen On=%i\n", digitalRead(GeneratorOnSenseGPIO));    
-  } 
-}
-
-
-int lastValue = 0;
-unsigned long lastChange = 0;
-bool isClimbing = false;
-
 void loop(){}
-
-
-/* This task configures the GPIO interrupt and uses it to tell
-   when the button is pressed.
-
-   The interrupt handler communicates the exact button press time to
-   the task via a queue.
-
-   This is a better example of how to wait for button input!
-*/
-void buttonIntTask(void *pvParameters)
-{
-    printf("Waiting for button press interrupt on gpio %d...\r\n", GeneratorOnSenseGPIO);
-    QueueHandle_t *tsqueue = (QueueHandle_t *)pvParameters;
-    //gpio_set_interrupt(GeneratorOnSenseGPIO, int_type, gpio_intr_handler);    
-    attachInterrupt(digitalPinToInterrupt(GeneratorOnSenseGPIO), gpio_intr_handler, CHANGE);
-
-    uint32_t last = 0;
-     while(1) {
-        struct AMessage xRxedStructure, *pxRxedPointer;
-
-        xQueueReceive(*tsqueue, &( xRxedStructure ), portMAX_DELAY);
-
-        xRxedStructure.time *= portTICK_PERIOD_MS;
-
-        if(last < xRxedStructure.time - 200) {
-            printf("Button interrupt fired at %dms by pin %i\r\n", xRxedStructure.time, xRxedStructure.gpio);
-            last = xRxedStructure.time;
-        }
-    }
-}
-
-void gpio_intr_handler()
-{
-    uint32_t now = xTaskGetTickCountFromISR();
-    AMessage pxPointerToxMessage;
-
-    pxPointerToxMessage.gpio = 21;
-    pxPointerToxMessage.time = now;
-
-    xQueueSendToBackFromISR(tsqueue, (void *)&pxPointerToxMessage, NULL);
-}

@@ -21,8 +21,6 @@ namespace SimpleWeb
 
 
         public:
-        
-        //Router(){}
 
         Router(WiFiServer &server) : _server(server){
             //_server = server;
