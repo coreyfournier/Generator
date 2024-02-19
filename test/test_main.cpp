@@ -2,7 +2,6 @@
 #include <string>
 #include <stdint.h>
 #include "Orchestration.cpp"
-#include "VoltageDetector.cpp"
 #include <stdio.h>
 #include <iostream>
 
@@ -26,6 +25,7 @@ void test_string_substring(void) {
     uint8_t pin1 = 1;
     uint8_t pin2 = 2;
 
+/**/
     class ListnerHandler: public IEvent
     {
         public:
@@ -51,6 +51,7 @@ void test_string_substring(void) {
     {
         o->SenseChanges();
     }
+    */
 
     TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
 }

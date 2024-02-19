@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
-#include "VoltageDetector.cpp"
+#include "PowerState.cpp"
+#include "GeneratorView.cpp"
 
 
 using namespace std;
@@ -24,30 +25,24 @@ class IEvent
 class Orchestration
 {
     private:
-    VoltageDetector *_utilitySenseL1;
-    VoltageDetector *_utilitySenseL2;
-    VoltageDetector *_generatorSense;
+    PowerState *_powerState;
     IEvent *_listner;
+
+    void ChangeListner(Pin* pin)
+    {
+
+        printf("Change found %s", pin->name.c_str());
+    }
     
     public:
-    /// @brief 
-    /// @param func 
-    /// @param utilitySenseL1Gpio Gpio pin for sensing if L1 has power
-    /// @param utilitySenseL2Gpio Gpio pin for sensing if L2 has power
-    /// @param generatorSenseGpio Gpio pin for sensing if the generator is running
-    /// @param listner call back for events
     Orchestration(
-        uint16_t (*func)(uint8_t),
-        uint8_t &utilitySenseL1Gpio,
-        uint8_t &utilitySenseL2Gpio,
-        uint8_t &generatorSenseGpio,
+        PowerState* powerState,
         IEvent *listner
     ) 
     {
-        _utilitySenseL1 = new VoltageDetector(func, utilitySenseL1Gpio);
-        _utilitySenseL2 = new VoltageDetector(func, utilitySenseL2Gpio);
-        _generatorSense = new VoltageDetector(func, generatorSenseGpio);
-        _listner = listner;
+        this->_powerState = powerState;
+        this->_listner = listner;
+        //this->_powerState->RegisterListner(&Orchestration::ChangeListner);
     }
 
     void SenseChanges()

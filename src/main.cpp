@@ -96,9 +96,9 @@ void setup() {
    /* Input pins */
   gpio_int_type_t tt;
   
-  pinMode(L1OnSense.gpio, INPUT_PULLDOWN);
-  pinMode(L2OnSense.gpio, INPUT_PULLDOWN);
-  pinMode(generatorOnSense.gpio, INPUT_PULLDOWN);
+  pinMode(L1OnSense.gpio, INPUT);
+  pinMode(L2OnSense.gpio, INPUT);
+  pinMode(generatorOnSense.gpio, INPUT);
   //gpio_set_intr_type((gpio_num_t)GeneratorOnSenseGPIO, GPIO_INTR_ANYEDGE);
 
     // gpio_config_t io_conf = {};

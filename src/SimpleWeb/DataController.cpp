@@ -43,7 +43,15 @@ namespace SimpleWeb
                 else
                 {
                     if(doc["state"].as<bool>())
-                        digitalWrite(doc["gpio"].as<int>(), HIGH);
+                    {
+                        int gpio = doc["gpio"].as<int>();
+                        digitalWrite(gpio, HIGH);
+                        if(gpio == 25 || gpio == 34)
+                        {
+                            vTaskDelay(1000);
+                            digitalWrite(gpio, LOW);
+                        }
+                    }
                     else
                         digitalWrite(doc["gpio"].as<int>(), LOW);
 
