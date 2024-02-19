@@ -1,3 +1,13 @@
+# Westinghouse Generator Controller via ESP32
+
+Testing UI to confirm generator control works with the circuit board.
+![POC UI while testing](/assets/PocUI.PNG "POC UI while testing")
+
+Custom board to interface with Westinghouse WGen12000DF via transfer switch plug
+![Custom Etched Board Front](/assets/Custom_Eteched_Board_Front.jpg "Custom Etched Board Front")
+
+![Custom Etched Board Back](/assets/Custom_Eteched_Board_Back.jpg "Custom Etched Board Back")
+
 # Setup environment
 Install vs code
 Install platformio plugin. 
@@ -16,10 +26,9 @@ Follow directions here: https://bromleysat.com/installing-drivers-for-the-esp32
 CLick on Upload Filesystem image under Platfom in the PlatformIo plugin. For more information see:
 https://randomnerdtutorials.com/esp32-vs-code-platformio-spiffs/
 
-# Detecting voltage and frequency
-https://simple-circuit.com/arduino-frequency-meter-220-380v-ac/
+
 # Pinout documentation
 https://learn.adafruit.com/adafruit-huzzah32-esp32-feather/pinouts
 
-PC817X octocoupler
+# PC817X octocoupler
 https://www.farnell.com/datasheets/73758.pdf

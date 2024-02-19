@@ -61,7 +61,7 @@ namespace SimpleWeb
             }
             else if(header.indexOf("GET /data HTTP/1.1") >= 0)
             {   
-                StaticJsonDocument<300> doc;      
+                StaticJsonDocument<600> doc;      
                 // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
                 // and a content-type so the client knows what's coming, then a blank line:
                 client.println("HTTP/1.1 200 OK");
@@ -79,7 +79,8 @@ namespace SimpleWeb
                     pin.state = (digitalRead(pin.gpio) ==  HIGH);
                     doc["pins"][i]["gpio"] = pin.gpio;
                     doc["pins"][i]["state"] = pin.state;
-                    doc["pins"][i]["name"] = pin.name;                
+                    doc["pins"][i]["name"] = pin.name;
+                    doc["pins"][i]["isReadOnly"] = (pin.isReadOnly == true);                
                 }                            
                 serializeJson(doc, client);
 
