@@ -22,7 +22,7 @@
             <div class='col-sm'>
             <div class="panel panel-default" >
                 <div class="panel-heading">
-                    <h3 class="panel-title">GPIO Pins</h3>
+                    <h3 class="panel-title">GPIO Pins</h3> <button onclick="$('#pin-body').empty();loadData();">⟳</button>
                 </div>
                 <div class="panel-body" id="pin-body">
                 </div>
@@ -31,7 +31,13 @@
     </body>
 </html>
 <script>
+
 $(document).ready(function(){
+    loadData();
+});
+
+function loadData()
+{
     $.getJSON("/data", function(data){
         var button = "";
         data.pins.forEach((pin)=>{
@@ -39,18 +45,18 @@ $(document).ready(function(){
 
             if(pin.isReadOnly)
             {
-                button +=  `<span id='gpio_${pin.gpio}' class=\"state state-${pin.state?'on':'off'}">${pin.state?'On':'Off'}</span>`;            
+                button +=  `<span id='gpio_${pin.gpio}' class=\"state state-${pin.state?'on':'off'}">${pin.state?'On':'Off'} - ${pin.gpio}</span>`;            
             }
             else
             {
                 button += 
-                `<button class=\"button\ button-${pin.state?'on':'off'}" id='gpio_${pin.gpio}' data-state="${pin.state}" onclick="stateChange(this, ${pin.gpio});">${pin.state?'On':'Off'}</button>`;            
+                `<button class=\"button\ button-${pin.state?'on':'off'}" id='gpio_${pin.gpio}' data-state="${pin.state}" onclick="stateChange(this, ${pin.gpio});">${pin.state?'On':'Off'} - ${pin.gpio}</button>`;            
             }
             button += "<br>";
         });
         $("#pin-body").append(button);
     });
-});
+}
 
 function stateChange(control, gpio)
 {
