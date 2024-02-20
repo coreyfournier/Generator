@@ -29,15 +29,12 @@ WiFiServer server(80);
 
 // Assign output variables to GPIO pins
 //https://learn.adafruit.com/assets/111179
-const int TransferGPIO = 26; //A0
-const int StartGPIO = 25; //A1
-const int StopGPIO = 34; //A2
-//gpio 16 = IO16
-Pin L1OnSense = Pin(16, false, "Utility L1 on/off", true);
-//gpio 17 = IO17
-Pin L2OnSense = Pin(17, false, "Utility L2 on/off", true);
-//gpio 21 = IO21
-Pin generatorOnSense = Pin(21, false, "Generator on/off", true);
+const int TransferGPIO = 21;
+const int StartGPIO = 27; //A10 
+const int StopGPIO = 33; //A9 
+Pin L1OnSense = Pin(15, false, "Utility L1 on/off", true);
+Pin L2OnSense = Pin(32, false, "Utility L2 on/off", true);
+Pin generatorOnSense = Pin(14, false, "Generator on/off", true);
 const gpio_int_type_t int_type = GPIO_INTR_ANYEDGE;
 
 GeneratorView view = GeneratorView();
