@@ -45,12 +45,22 @@ namespace SimpleWeb
                     if(doc["state"].as<bool>())
                     {
                         int gpio = doc["gpio"].as<int>();
-                        digitalWrite(gpio, HIGH);
-                        if(gpio == 25 || gpio == 34)
+
+                        Pin* foundPin = _view.FindByGpio(gpio);
+                        if(foundPin == nullptr)
                         {
-                            vTaskDelay(1000);
-                            digitalWrite(gpio, LOW);
+                            //Can't find the pin, so do nothing
+                            Serial.printf("Can't find pin specified");
                         }
+                        else
+                        {
+                            digitalWrite(gpio, HIGH);
+                            if(foundPin->role == PinRole::Start || foundPin->role == PinRole::Stop)
+                            {
+                                vTaskDelay(1000);
+                                digitalWrite(gpio, LOW);
+                            }
+                        }                        
                     }
                     else
                         digitalWrite(doc["gpio"].as<int>(), LOW);

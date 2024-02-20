@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <ArduinoJson.h>
 #include "GeneratorView.cpp"
+#include "Pin.cpp"
 using namespace std;
 
 namespace{

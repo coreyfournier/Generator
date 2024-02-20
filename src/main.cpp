@@ -14,6 +14,7 @@
 #include "SimpleWeb/Router.h"
 #include "SimpleWeb/IController.h"
 #include "PowerState.cpp"
+#include "Pin.cpp"
 #include <vector>
 
 
@@ -32,9 +33,9 @@ WiFiServer server(80);
 const int TransferGPIO = 21;
 const int StartGPIO = 27; //A10 
 const int StopGPIO = 33; //A9 
-Pin L1OnSense = Pin(15, false, "Utility L1 on/off", true);
-Pin L2OnSense = Pin(32, false, "Utility L2 on/off", true);
-Pin generatorOnSense = Pin(14, false, "Generator on/off", true);
+Pin L1OnSense = Pin(15, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
+Pin L2OnSense = Pin(32, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
+Pin generatorOnSense = Pin(14, false, "Generator on/off", true, PinRole::GeneratorOnL1);
 const gpio_int_type_t int_type = GPIO_INTR_ANYEDGE;
 
 GeneratorView view = GeneratorView();
@@ -80,15 +81,15 @@ void setup() {
   /*Configure all of the GPIO pins*/
   pinMode(TransferGPIO, OUTPUT);
   digitalWrite(TransferGPIO, LOW);
-  view.pins.push_back(Pin(TransferGPIO, false, "Transfer"));
+  view.pins.push_back(Pin(TransferGPIO, false, "Transfer", PinRole::Transfer));
 
   pinMode(StartGPIO, OUTPUT);
   digitalWrite(StartGPIO, LOW);
-  view.pins.push_back(Pin(StartGPIO, false, "Start Generator"));
+  view.pins.push_back(Pin(StartGPIO, false, "Start Generator", PinRole::Start));
 
   pinMode(StopGPIO, OUTPUT);
   digitalWrite(StopGPIO, LOW);
-  view.pins.push_back(Pin(StopGPIO, false, "Stop Generator"));
+  view.pins.push_back(Pin(StopGPIO, false, "Stop Generator", PinRole::Stop));
 
    /* Input pins */
   gpio_int_type_t tt;
