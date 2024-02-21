@@ -22,7 +22,7 @@
             <div class='col-sm'>
             <div class="panel panel-default" >
                 <div class="panel-heading">
-                    <h3 class="panel-title">GPIO Pins</h3> <button onclick="$('#pin-body').empty();loadData();">⟳</button>
+                    <h3 class="panel-title">GPIO Pins <button onclick="$('#pin-body').empty();loadData();">&#8635;</button></h3> 
                 </div>
                 <div class="panel-body" id="pin-body">
                 </div>
@@ -41,16 +41,16 @@ function loadData()
     $.getJSON("/data", function(data){
         var button = "";
         data.pins.forEach((pin)=>{
-            button += `   <label for='gpio_${pin.gpio}'>${pin.name}</label>`;
+            button += `   <label for='gpio_${pin.gpio}'>${pin.name} (${pin.gpio})</label>`;
 
             if(pin.isReadOnly)
             {
-                button +=  `<span id='gpio_${pin.gpio}' class=\"state state-${pin.state?'on':'off'}">${pin.state?'On':'Off'} - ${pin.gpio}</span>`;            
+                button +=  `<span id='gpio_${pin.gpio}' class=\"state state-${pin.state?'on':'off'}">${pin.state?'On':'Off'}</span>`;            
             }
             else
             {
                 button += 
-                `<button class=\"button\ button-${pin.state?'on':'off'}" id='gpio_${pin.gpio}' data-state="${pin.state}" onclick="stateChange(this, ${pin.gpio});">${pin.state?'On':'Off'} - ${pin.gpio}</button>`;            
+                `<button class=\"button\ button-${pin.state?'on':'off'}" id='gpio_${pin.gpio}' data-state="${pin.state}" onclick="stateChange(this, ${pin.gpio});">${pin.state?'On':'Off'}</button>`;            
             }
             button += "<br>";
         });

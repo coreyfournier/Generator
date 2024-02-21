@@ -42,28 +42,40 @@ namespace SimpleWeb
                 }
                 else
                 {
-                    if(doc["state"].as<bool>())
-                    {
-                        int gpio = doc["gpio"].as<int>();
+                    int gpio = doc["gpio"].as<int>();                         
+                    Pin* foundPin = _view.FindByGpio(gpio);
 
-                        Pin* foundPin = _view.FindByGpio(gpio);
-                        if(foundPin == nullptr)
-                        {
-                            //Can't find the pin, so do nothing
-                            Serial.printf("Can't find pin specified");
-                        }
-                        else
+                    if(foundPin == nullptr)
+                    {
+                        doc["success"] = false;
+                        doc["message"] = "Pin not found";    
+                    }
+                    else
+                    {
+                        if(doc["state"].as<bool>())
                         {
                             digitalWrite(gpio, HIGH);
                             if(foundPin->role == PinRole::Start || foundPin->role == PinRole::Stop)
                             {
                                 vTaskDelay(1000);
                                 digitalWrite(gpio, LOW);
+                                doc["state"] = false;
                             }
-                        }                        
+                            else
+                                doc["state"] = true;                    
+                        }
+                        else
+                        {
+                            digitalWrite(doc["gpio"].as<int>(), LOW);
+                            doc["state"] = false;
+                        }
+
+                        doc["name"] = foundPin->name;
+                        doc["isReadOnly"] = foundPin->isReadOnly;                
+
+                        foundPin->state = doc["state"].as<bool>();
                     }
-                    else
-                        digitalWrite(doc["gpio"].as<int>(), LOW);
+                   
 
                     // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
                     // and a content-type so the client knows what's coming, then a blank line:
@@ -98,7 +110,7 @@ namespace SimpleWeb
                     doc["pins"][i]["gpio"] = pin.gpio;
                     doc["pins"][i]["state"] = pin.state;
                     doc["pins"][i]["name"] = pin.name;
-                    doc["pins"][i]["isReadOnly"] = (pin.isReadOnly == true);                
+                    doc["pins"][i]["isReadOnly"] = pin.isReadOnly;                
                 }                            
                 serializeJson(doc, client);
 
