@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "PowerState.cpp"
 #include "GeneratorView.cpp"
-
+#include "IO/IBoardIo.h"
 
 using namespace std;
 
@@ -27,6 +27,7 @@ class Orchestration
     private:
     PowerState *_powerState;
     IEvent *_listner;
+    IO::IBoardIO  *_board;
 
     void ChangeListner(Pin* pin)
     {
@@ -37,14 +38,16 @@ class Orchestration
     public:
     Orchestration(
         PowerState* powerState,
-        IEvent *listner
+        IEvent *listner,
+        IO::IBoardIO *board
     ) 
     {
         this->_powerState = powerState;
         this->_listner = listner;
+        this->_board = board;
         //this->_powerState->RegisterListner(&Orchestration::ChangeListner);
     }
-
+    
     void SenseChanges()
     {      
         /*
