@@ -8,15 +8,15 @@
 #include <WiFi.h>
 #include <stdio.h>
 #include <ArduinoJson.h>
-#include "GeneratorView.cpp"
 #include "SimpleWeb/DataController.cpp"
 #include "SimpleWeb/IndexController.cpp"
 #include "SimpleWeb/Router.h"
 #include "SimpleWeb/IController.h"
-#include "PowerState.cpp"
+#include "IO/PowerState.h"
 #include "Pin.cpp"
-#include <vector>
-
+#include "Orchestration.cpp"
+#include "IO/RtosIO.cpp"
+#include "IO/IBoardIo.h"
 
 using namespace std;
 
@@ -32,14 +32,31 @@ WiFiServer server(80);
 //https://learn.adafruit.com/assets/111179
 const int TransferGPIO = 21;
 const int StartGPIO = 27; //A10 
-const int StopGPIO = 33; //A9 
+const int StopGPIO = 33; //A9 AMessage
+
 Pin L1OnSense = Pin(15, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
 Pin L2OnSense = Pin(32, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
 Pin generatorOnSense = Pin(14, false, "Generator on/off", true, PinRole::GeneratorOnL1);
 const gpio_int_type_t int_type = GPIO_INTR_ANYEDGE;
 
-GeneratorView view = GeneratorView();
-PowerState powerState = PowerState();
+class EventStub : public IEvent
+{
+  public:
+  void Change(Event e)
+  {
+    Serial.printf("Event=%s", IEvent::ToName(e).c_str());
+  }
+};
+
+
+EventStub es = EventStub();
+IO::RtosIO board = IO::RtosIO();
+Orchestration view = Orchestration( 
+  &es, 
+  &board);
+IO::PowerState powerState = IO::PowerState();
+//powerState.RegisterListner(*view);
+
 TaskHandle_t webSiteTask;
 TaskHandle_t sensorTask;
 
@@ -74,22 +91,23 @@ void setup() {
   Serial.println(WiFi.localIP());
   server.begin();  
 
-  view.pins.push_back(L1OnSense);
-  view.pins.push_back(L2OnSense);
-  view.pins.push_back(generatorOnSense);
+  view.AddPin(L1OnSense);
+  view.AddPin(L2OnSense);
+  view.AddPin(generatorOnSense);
 
   /*Configure all of the GPIO pins*/
   pinMode(TransferGPIO, OUTPUT);
   digitalWrite(TransferGPIO, LOW);
-  view.pins.push_back(Pin(TransferGPIO, false, "Transfer", PinRole::Transfer));
+  
+  view.AddPin(Pin(TransferGPIO, false, "Transfer", PinRole::Transfer));
 
   pinMode(StartGPIO, OUTPUT);
   digitalWrite(StartGPIO, LOW);
-  view.pins.push_back(Pin(StartGPIO, false, "Start Generator", PinRole::Start));
+  view.AddPin(Pin(StartGPIO, false, "Start Generator", PinRole::Start));
 
   pinMode(StopGPIO, OUTPUT);
   digitalWrite(StopGPIO, LOW);
-  view.pins.push_back(Pin(StopGPIO, false, "Stop Generator", PinRole::Stop));
+  view.AddPin(Pin(StopGPIO, false, "Stop Generator", PinRole::Stop));
 
    /* Input pins */
   gpio_int_type_t tt;
@@ -142,7 +160,7 @@ void setup() {
   //tsqueue = xQueueCreate(4, sizeof(xMessage));
    
   xTaskCreatePinnedToCore(
-          PowerState::StateChangeTaskHandler,   /* Task function. */
+          IO::PowerState::StateChangeTaskHandler,   /* Task function. */
           "Interupt Task Handler",     /* name of task. */
           10000,       /* Stack size of task */
           &powerState.tsqueue,
@@ -160,7 +178,7 @@ void setup() {
 void generatorSenseChange()
 {
     uint32_t now = xTaskGetTickCountFromISR();
-    AMessage pxPointerToxMessage;
+    IO::AMessage pxPointerToxMessage;
 
     pxPointerToxMessage.pin = &generatorOnSense;
     pxPointerToxMessage.time = now;
@@ -170,7 +188,7 @@ void generatorSenseChange()
 void L1SenseChange()
 {
     uint32_t now = xTaskGetTickCountFromISR();
-    AMessage pxPointerToxMessage;
+    IO::AMessage pxPointerToxMessage;
 
     pxPointerToxMessage.pin = &L1OnSense;
     pxPointerToxMessage.time = now;
@@ -180,7 +198,7 @@ void L1SenseChange()
 void L2SenseChange()
 {
     uint32_t now = xTaskGetTickCountFromISR();
-    AMessage pxPointerToxMessage;
+    IO::AMessage pxPointerToxMessage;
 
     pxPointerToxMessage.pin = &L2OnSense;
     pxPointerToxMessage.time = now;

@@ -1,8 +1,8 @@
 #pragma once
 #include <ArduinoJson.h>
 #include "Router.h"
-#include "GeneratorView.cpp"
 #include "IController.h"
+#include "Orchestration.cpp"
 using namespace std;
 
 
@@ -10,10 +10,10 @@ namespace SimpleWeb
 {
     class DataController: public IController
     {
-        GeneratorView _view;
+        Orchestration _view;
 
         public:
-        DataController(GeneratorView& view): _view(view)
+        DataController(Orchestration& view): _view(view)
         {
         }
 
@@ -54,22 +54,20 @@ namespace SimpleWeb
                     {
                         if(doc["state"].as<bool>())
                         {
-                            digitalWrite(gpio, HIGH);
+                            this->_view.DigitalWrite(*foundPin, true);
+
                             if(foundPin->role == PinRole::Start || foundPin->role == PinRole::Stop)
                             {
                                 vTaskDelay(1000);
-                                digitalWrite(gpio, LOW);
-                                doc["state"] = false;
+                                this->_view.DigitalWrite(*foundPin, false);
                             }
-                            else
-                                doc["state"] = true;                    
                         }
                         else
                         {
-                            digitalWrite(doc["gpio"].as<int>(), LOW);
-                            doc["state"] = false;
+                            this->_view.DigitalWrite(*foundPin, false);                            
                         }
 
+                        doc["state"] = foundPin->state;
                         doc["name"] = foundPin->name;
                         doc["isReadOnly"] = foundPin->isReadOnly;                
 
@@ -100,13 +98,13 @@ namespace SimpleWeb
                 client.println(); 
                 
                 Serial.printf("data...");
-                Serial.printf("pins=%i\n", sizeof(_view.pins));
+                Serial.printf("pins=%i\n", _view.PinCount());
 
-                for(int i=0; i< _view.pins.size(); i++)
+                for(int i=0; i< _view.PinCount(); i++)
                 {
-                    Pin pin = _view.pins[i];
+                    Pin pin = _view.GetPin(i);
                     Serial.printf("digitalRead... %s %i\n",pin.name.c_str(), pin.gpio);
-                    pin.state = (digitalRead(pin.gpio) ==  HIGH);
+                    pin.state = this->_view.DigitalRead(pin);
                     doc["pins"][i]["gpio"] = pin.gpio;
                     doc["pins"][i]["state"] = pin.state;
                     doc["pins"][i]["name"] = pin.name;
