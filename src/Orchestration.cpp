@@ -8,17 +8,26 @@
 
 using namespace std;
 
+/// @brief All the event phases. The order matters here as they are step by step progression, it also matches the ToName function
 enum Event { 
-    UtilityOn, 
-    UtilityOff, 
-    GeneratorOn, 
-    GeneratorOff, 
-    GeneratorStarting, 
-    GeneratorCoolingDown, 
-    GeneratoredStopping,
-    TransferToUtility,
-    TransferToGenerator,
-    StartFailure
+    //Startup phases     
+    UtilityOff = 0,
+    UtilityOffWait = 1
+    GeneratorStart = 2,
+    GeneratorStarting = 3, 
+    GeneratorOn = 4, 
+    GeneratorWarmUp = 5,
+    TransferToGenerator = 6,
+
+    //Shutdown phases
+    UtilityOn = 7,
+    UtilityOnWait = 8,
+    TransferToUtility = 9,
+    GeneratorCoolingDown = 10, 
+    GeneratoredStopping = 11,
+    GeneratorOff = 12, 
+    
+    StartFailure = 13
 };
 
 class IEvent
@@ -30,17 +39,27 @@ class IEvent
 
     static string ToName(Event e)
     {
-         static string _enumStrings[10] = { 
-        "Utility On",
-        "Utility Off",
-        "GeneratorOn",
-        "GeneratorOff",
-        "GeneratorStarting",
-         "GeneratorCoolingDown",
-        "GeneratoredStopping",
-         "TransferToUtility",
-         "TransferToGenerator",
-         "StartFailure"
+         static string _enumStrings[13] = { 
+            //Startup phases
+            "Utility Off",
+            "UtilityOffWait",
+            "GeneratorOff",
+            "GeneratorStart",
+            "GeneratorStarting",
+            "GeneratorOn",
+            "GeneratorWarmUp",
+            "TransferToGenerator",
+
+            //Shut down phases
+            "UtilityOn",
+            "UtilityOnWait",
+            "TransferToUtility",
+            "GeneratorCoolingDown", 
+            "GeneratoredStopping",
+            "GeneratorOff", 
+
+            //Error states
+            "StartFailure"
          };
         return _enumStrings[(int)e];
     }
