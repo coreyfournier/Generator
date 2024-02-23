@@ -14,6 +14,9 @@ Custom board to interface with Westinghouse WGen12000DF via transfer switch plug
 * When the generator turns on the readings for L1 and L2 start start flipping as if there is some kind of interfearence. Upon futher inspection all of the optocouplers get cooked when it started up
 * Only the start lead is need to start the generator. It must be momentary, one second seems to work. If left connected the fuse for the starter blows.
 
+2/22/24
+Need to vhance enum to represent startup and shut down stages. use queue to allow asynchronous execution and delay for state confirmation.
+
 # Setup environment
 Install vs code
 Install platformio plugin. 
