@@ -49,9 +49,9 @@ void test_string_substring(void) {
     //loop for a few times to simulate things happening over time
     for(int i =0; i< 10; i++)
     {
-        o->SenseChanges();
+        //o->SenseChanges();
     }
-    */
+    
 
     TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
 }

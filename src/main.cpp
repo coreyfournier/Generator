@@ -168,11 +168,22 @@ void setup() {
           NULL,      /* Task handle to keep track of created task */
           1);          /* pin task to core 1 */ 
 
+  xTaskCreatePinnedToCore(     
+      //[](const Bar & first, const Bar & second) { return ...; }     
+          [](void *params){ view.StateWaiter(); },   /* Task function. */
+          "Change Task Handler",     /* name of task. */
+          10000,       /* Stack size of task */
+          NULL,
+          3,           /* priority of the task */
+          NULL,      /* Task handle to keep track of created task */
+          1);          /* pin task to core 1 */ 
+
   //Listen for the state changes
   attachInterrupt(digitalPinToInterrupt(generatorOnSense.gpio), generatorSenseChange, CHANGE);
   attachInterrupt(digitalPinToInterrupt(L1OnSense.gpio), L1SenseChange, CHANGE);
   attachInterrupt(digitalPinToInterrupt(L2OnSense.gpio), L2SenseChange, CHANGE);
   
+  view.Initalize();
 }
 
 void generatorSenseChange()
