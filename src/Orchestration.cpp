@@ -48,11 +48,17 @@ class Orchestration : public IPinChangeListner
             if(utilityL1->state && utilityL2->state)
             {
                 //Need to send notification that the utility is now on
-                this->_currentEventState = Event::UtilityOn;
-                this->_currentEventState = Event::UtilityOnWait;
-                ChangeMessage cm = ChangeMessage(Event::UtilityOnWait);
+                this->StateChange(Event::UtilityOn);
+                this->StateChange(Event::UtilityOnWait);
+                
+                ChangeMessage cm = ChangeMessage(Event::UtilityOnWait, pin);
                 xQueueSendToBackFromISR(this->_queue, (void *)&cm, NULL);
             }
+
+        }
+        //Came back after the wait
+        else if(this->_currentEventState == Event::UtilityOffWait)
+        {
 
         }
         //Utility is off. I don't care which leg it is, the house can't function on one.
@@ -61,10 +67,15 @@ class Orchestration : public IPinChangeListner
             this->StateChange(Event::UtilityOff);
             this->StateChange(Event::UtilityOffWait);
 
-            ChangeMessage cm = ChangeMessage(Event::UtilityOffWait);
+            ChangeMessage cm = ChangeMessage(Event::UtilityOffWait, pin);
             
             xQueueSendToBackFromISR(this->_queue, (void *)&cm, NULL);
         }
+    }
+
+    void Generator(Event e)
+    {
+
     }
 
     void StateChange(Event e)
@@ -73,7 +84,6 @@ class Orchestration : public IPinChangeListner
         this->_currentEventState = e;
         Serial.printf("State change '%s' (%i)\n", IEvent::ToName(e).c_str(), e);
     }
-
         
     public:
 
@@ -179,23 +189,29 @@ class Orchestration : public IPinChangeListner
                 Serial.printf("Delay for utility off\n");
                 
                 this->_board->TaskDelay(10000);
+                this->StateChange(Event::UtilityOffWaitDone); 
+                
+                this->ChangeListner(changeMessage.pin);
             }
             else if(changeMessage.event == Event::GeneratorStarting)
             {
                 Serial.printf("Waiting during startup\n");
 
-                this->_board->TaskDelay(10000);                
+                this->_board->TaskDelay(10000);   
+
+                this->ChangeListner(changeMessage.pin);             
             }
             else if(changeMessage.event == Event::GeneratorWarmUp)
             {
                 Serial.printf("Generator warmup\n");
 
                 this->_board->TaskDelay(10000);
+
                 //Can now transfer
+                this->ChangeListner(changeMessage.pin);
             }
         }
-    }
-    
+    }    
     
     void DigitalWrite(Pin& pin, bool value)
     {
