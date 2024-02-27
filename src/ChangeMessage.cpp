@@ -27,7 +27,7 @@ enum Event {
     GeneratorOff = 16, 
 
     //Any other events
-    StartFailure = 17
+    StartFailure = 17,
     Idle = 18
 };
 
