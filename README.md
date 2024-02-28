@@ -17,6 +17,32 @@ Custom board to interface with Westinghouse WGen12000DF via transfer switch plug
 2/22/24
 Need to vhance enum to represent startup and shut down stages. use queue to allow asynchronous execution and delay for state confirmation.
 
+2/27/24
+Notes for state change classes
+Pin change
+	Utility is off
+	State do action Utility Off
+		change state, wait to confirm utility is off
+Utility off wait
+	State do action utility off wait	
+		confirm utility is still off
+		change state, start generator
+Start Generator 
+	State do action Start generator
+		Start generator....
+		change state Starting generator Wait
+Starting Generator Wait
+	State do action starting generator
+		is generator started?
+		change state Generator warming Up Wait
+Generator Warming Up Wait
+	state do action Generator Warming up wait
+	.......
+		
+	
+
+
+
 # Setup environment
 Install vs code
 Install platformio plugin. 
