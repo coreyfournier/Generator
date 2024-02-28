@@ -6,76 +6,31 @@
 #include "IO/IBoardIo.h"
 #include "IPinChangeListner.h"
 #include "ChangeMessage.cpp"
+#include "Devices/Generator.cpp"
+#include "Devices/Utility.cpp"
 
 using namespace std;
 
 class Orchestration : public IPinChangeListner
 {
     private:
+    Devices::Generator* _generator;
+    Devices::Utility* _utility;
     IO::PowerState _powerState;
     IEvent* _listner;
     IO::IBoardIO*  _board;
     std::vector<Pin> _pins;   
     Event _currentEventState = Event::Initalize; 
-    QueueHandle_t _queue;
+    QueueHandle_t _pinQueueChange;
     bool _isUtilityOn = true;
+        
+    public:
 
-    void UtilityChange(Pin& pin)
+    /// @brief Gets the current event state
+    /// @return 
+    Event GetState()
     {
-        //Need to make sure both are on
-        if(pin.state)
-        {
-            Pin* utilityL1;
-            Pin* utilityL2;
-
-            if(pin.role == PinRole::UtilityOnL1)
-            {
-                utilityL1 = &pin;
-
-                utilityL2 = this->FindByRole(PinRole::UtilityOnL2);
-                if(utilityL2 == nullptr)
-                    throw std::invalid_argument("Missing pin role for Utility On L2");
-            }
-            else
-            {
-                utilityL2 = &pin;
-
-                utilityL1 = this->FindByRole(PinRole::UtilityOnL1);
-                if(utilityL1 == nullptr)
-                    throw std::invalid_argument("Missing pin role for Utility On L1");                    
-            }
-
-            if(utilityL1->state && utilityL2->state)
-            {
-                //Need to send notification that the utility is now on
-                this->StateChange(Event::UtilityOn);
-                this->StateChange(Event::UtilityOnWait);
-                
-                ChangeMessage cm = ChangeMessage(Event::UtilityOnWait, pin);
-                xQueueSendToBackFromISR(this->_queue, (void *)&cm, NULL);
-            }
-
-        }
-        //Came back after the wait
-        else if(this->_currentEventState == Event::UtilityOffWait)
-        {
-
-        }
-        //Utility is off. I don't care which leg it is, the house can't function on one.
-        else
-        {
-            this->StateChange(Event::UtilityOff);
-            this->StateChange(Event::UtilityOffWait);
-
-            ChangeMessage cm = ChangeMessage(Event::UtilityOffWait, pin);
-            
-            xQueueSendToBackFromISR(this->_queue, (void *)&cm, NULL);
-        }
-    }
-
-    void Generator(Event e)
-    {
-
+        return this->_currentEventState;
     }
 
     void StateChange(Event e)
@@ -84,57 +39,63 @@ class Orchestration : public IPinChangeListner
         this->_currentEventState = e;
         Serial.printf("State change '%s' (%i)\n", IEvent::ToName(e).c_str(), e);
     }
-        
-    public:
+
+    void QueueMessage(ChangeMessage& cm)
+    {
+        xQueueSendToBackFromISR(this->_pinQueueChange, (void *)&cm, NULL);
+    }
+    
 
     /// @brief Reads the states of the utility pins on startup to see what to do. If they are off, then it fires an event.
     void Initalize()
     {
         this->StateChange(Event::Initalize);
 
-        Pin* utilityL1 = this->FindByRole(PinRole::UtilityOnL1);
-        
-        if(utilityL1 == nullptr)
-            Serial.println("UtilityL1 pin was not found");
-        else
+        Pin* generatorL1 = this->FindByRole(PinRole::GeneratorOnL1);
+        Pin* generatorL2 = this->FindByRole(PinRole::GeneratorOnL2);
+
+        if(generatorL1 == nullptr && generatorL2 == nullptr)
+            throw new exception("No pin roles found for the generator");
+
+        if(generatorL1 == nullptr)
+            throw new exception("Generator L1 is required, but L2 is optional.");
+        else if(generatorL2 == nullptr)
         {
-            this->_board->DigitalRead(*utilityL1);
-
-            if(!utilityL1->state)
-                this->ChangeListner(*utilityL1);
+            Serial.println("No role for Generator L2 pin was not found");
+            _generator = Devices::Generator(generatorL1)
         }
+        else
+            _generator = Devices::Generator(generatorL1, generatorL2);
 
+        Pin* utilityL1 = this->FindByRole(PinRole::UtilityOnL1);
         Pin* utilityL2 = this->FindByRole(PinRole::UtilityOnL2);
         
+        this->_utility = Devices::Utility(utilityL1, utilityL2, this);
+        
+        if(utilityL1 == nullptr)
+            throw new exception("No role for Utility L1 pin was not found");
+
         if(utilityL2 == nullptr)
-            Serial.println("UtilityL2 pin was not found");
-        else
-        {            
-            this->_board->DigitalRead(*utilityL2);
-            if(!utilityL2->state)
-                this->ChangeListner(*utilityL2);
-        }
+            Serial.println("NO role for Utility L2 pin was not found");
+        
+        this->_board->DigitalRead(*utilityL1);
+
+        if(!utilityL1->state)
+            this->PinChange(*utilityL1);   
+                  
+        this->_board->DigitalRead(*utilityL2);
+
+        if(!utilityL2->state)
+            this->PinChange(*utilityL2);    
     }
 
-    void ChangeListner(Pin& pin)
+    void PinChange(Pin& pin)
     {
         Serial.printf("ChangeListner %s (%i) State=%i\n", pin.name.c_str(), pin.gpio, pin.state);
 
-        if(pin.role == PinRole::UtilityOnL1 || pin.role == PinRole::UtilityOnL1)
-        {
-            this->UtilityChange(pin);
-        }
-        else if(pin.role == PinRole::GeneratorOnL1 || pin.role == PinRole::GeneratorOnL2)
-        {
-            if(pin.role == PinRole::GeneratorOnL1 && pin.role == PinRole::GeneratorOnL2)
-            {
-                this->StateChange(Event::GeneratorOn);
-            }
-            else
-            {
+        this->_utility->PinChange(pin);
+        this->_generator->PinChange(pin);
 
-            }
-        }
         printf("****************Change found %s %i*******************\n", pin.name.c_str(), pin.state);
     }
 
@@ -169,7 +130,7 @@ class Orchestration : public IPinChangeListner
         IO::IBoardIO* board
     ) :  _listner(listner), _board(board)
     {        
-       this->_queue = xQueueCreate(10, sizeof(ChangeMessage));  
+       this->_pinQueueChange = xQueueCreate(10, sizeof(ChangeMessage));  
     }
 
     void StateWaiter()
@@ -180,7 +141,7 @@ class Orchestration : public IPinChangeListner
 
         while(true)
         {
-            xQueueReceive(this->_queue, &( changeMessage ), portMAX_DELAY);
+            xQueueReceive(this->_pinQueueChange, &( changeMessage ), portMAX_DELAY);
             
             this->StateChange(changeMessage.event);
 
@@ -191,7 +152,7 @@ class Orchestration : public IPinChangeListner
                 this->_board->TaskDelay(10000);
                 this->StateChange(Event::UtilityOffWaitDone); 
                 
-                this->ChangeListner(changeMessage.pin);
+                this->PinChange(changeMessage.pin);
             }
             else if(changeMessage.event == Event::GeneratorStarting)
             {
@@ -199,7 +160,7 @@ class Orchestration : public IPinChangeListner
 
                 this->_board->TaskDelay(10000);   
 
-                this->ChangeListner(changeMessage.pin);             
+                this->PinChange(changeMessage.pin);             
             }
             else if(changeMessage.event == Event::GeneratorWarmUp)
             {
@@ -208,7 +169,7 @@ class Orchestration : public IPinChangeListner
                 this->_board->TaskDelay(10000);
 
                 //Can now transfer
-                this->ChangeListner(changeMessage.pin);
+                this->PinChange(changeMessage.pin);
             }
         }
     }    
@@ -218,7 +179,7 @@ class Orchestration : public IPinChangeListner
         if(value != pin.state)
         {
             this->_board->DigitalWrite(pin, value);
-            this->ChangeListner(pin);
+            this->PinChange(pin);
         }
         else
             Serial.printf("No Change\n");

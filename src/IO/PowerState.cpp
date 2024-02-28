@@ -41,7 +41,7 @@ namespace IO {
 
                 //Notify of the change
                 if(listner != nullptr)
-                    listner->ChangeListner(*xRxedStructure.pin);
+                    listner->PinChange(*xRxedStructure.pin);
 
                 last = xRxedStructure.time;
             }

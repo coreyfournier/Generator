@@ -4,5 +4,5 @@
 class IPinChangeListner
 {
     public:
-    virtual void ChangeListner(Pin& pin) = 0;    
+    virtual void PinChange(Pin& pin) = 0;    
 };
