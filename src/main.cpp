@@ -14,11 +14,12 @@
 #include "SimpleWeb/IController.h"
 #include "IO/PowerState.h"
 #include "Pin.cpp"
-#include "Orchestration.cpp"
+#include "States/Orchestration.cpp"
 #include "IO/RtosIO.cpp"
 #include "IO/IBoardIo.h"
 
 using namespace std;
+using namespace States;
 
 // Replace with your network credentials
 const char* ssid = WIFI_SSID;

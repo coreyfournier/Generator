@@ -1,8 +1,10 @@
 #pragma once
-#include "ChangeMessage.cpp"
+#include "States/ChangeMessage.cpp"
+#include "States/IEvent.cpp"
+using namespace States;
 
 class IStateChangeListner
 {
     public:
-    virtual void StateChange(IEvent event) = 0;    
+    virtual void StateChange(IEvent& event) = 0;    
 };
