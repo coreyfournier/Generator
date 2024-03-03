@@ -5,7 +5,7 @@ using namespace std;
 
 namespace States
 {
-    class UtilityOn:IState
+    class UtilityOn: public IState
     {
         private:
         Orchestration _context;

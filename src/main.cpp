@@ -15,6 +15,7 @@
 #include "IO/PowerState.h"
 #include "Pin.cpp"
 #include "States/Orchestration.cpp"
+#include "States/Initial.cpp"
 #include "IO/RtosIO.cpp"
 #include "IO/IBoardIo.h"
 

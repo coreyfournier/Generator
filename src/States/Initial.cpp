@@ -1,24 +1,25 @@
 #pragma once
-#include "States/IState.h"
-#include "States/Orchestration.cpp"
+#include "IState.h"
+#include "States/IContext.h"
+//#include "States/Orchestration.cpp"
 using namespace std;
 
 namespace States
 {
-    class UtilityOff: public IState
+    class Initial: public IState
     {
         private:
-        Orchestration _context;
+        IContext* _context;
 
         public:
-        UtilityOff(Orchestration context) : _context(context)
+        Initial(IContext& context) : _context(context)
         {
 
         }
 
         void DoAction()
         {
-            //this->_context.
+
         }
 
         void WaitDone()
@@ -28,7 +29,7 @@ namespace States
 
         string GetName()
         {
-            return "UtilityOff";
+            return "Utility On";
         }
     };
 }

@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
+#include <map>
 #include "IO/PowerState.h"
 #include "IO/IBoardIo.h"
 #include "IPinChangeListner.h"
@@ -11,11 +12,14 @@
 #include "IEvent.cpp"
 #include "ChangeMessage.cpp"
 #include "IState.h"
+#include "States/Initial.cpp"
+#include "States/IContext.h"
+
 using namespace std;
 
 namespace States
 {
-    class Orchestration : public IPinChangeListner
+    class Orchestration : public IPinChangeListner, public IContext
     {
         private:
         Devices::Generator* _generator;
@@ -27,9 +31,25 @@ namespace States
         QueueHandle_t _pinQueueChange;
         bool _isUtilityOn = true;
         IState* _currentState;
+        std::map<Event, IState*> _stateMap;
 
             
         public:
+        /// @brief Constructor
+        /// @param listner 
+        /// @param board 
+        Orchestration(
+            IEvent* listner,
+            IO::IBoardIO* board
+        ) :  _listner(listner), 
+            _board(board)            
+        {                    
+            this->_pinQueueChange = xQueueCreate(10, sizeof(ChangeMessage));  
+            //Register the states
+
+            this->_stateMap.insert(Event::Initalize, Initial(this));
+
+        }
 
         // /// @brief Gets the current event state
         // /// @return 
@@ -59,6 +79,8 @@ namespace States
         /// @brief Reads the states of the utility pins on startup to see what to do. If they are off, then it fires an event.
         void Initalize()
         {
+            Initial* i = new Initial();
+            this->_currentState = i;
             /*
             this->StateChange(Event::Initalize);
 
@@ -137,18 +159,7 @@ namespace States
             return this->_pins[index];
         }    
 
-        /// @brief Constructor
-        /// @param listner 
-        /// @param board 
-        Orchestration(
-            IEvent* listner,
-            IO::IBoardIO* board
-        ) :  _listner(listner), 
-            _board(board) 
-            //_currentState(Initalize(this))
-        {        
-            this->_pinQueueChange = xQueueCreate(10, sizeof(ChangeMessage));  
-        }
+       
 
         void StateWaiter()
         {
