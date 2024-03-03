@@ -25,7 +25,7 @@ namespace States
     {
         private:
         Devices::Generator* _generator;
-        Devices::Utility* _utility;
+        Devices::Generator* _utility;
         IO::PowerState _powerState;
         IEvent* _listner;
         IO::IBoardIO*  _board;
@@ -48,9 +48,6 @@ namespace States
         {                    
             this->_pinQueueChange = xQueueCreate(10, sizeof(ChangeMessage));  
             //Register the states
-
-            
-
         }
 
         // /// @brief Gets the current event state
@@ -60,17 +57,6 @@ namespace States
         //     return this->_currentEventState;
         // }
 
-        bool IsUtilityOn()
-        {
-            return this->_isUtilityOn;
-        }
-
-        void StateChange(Event e)
-        {
-            Serial.println(IEvent::ToName(e).c_str());
-            //this->_currentEventState = e;
-            Serial.printf("State change '%s' (%i)\n", IEvent::ToName(e).c_str(), e);
-        }
 
         void QueueMessage(ChangeMessage& cm)
         {
@@ -80,66 +66,63 @@ namespace States
 
         /// @brief Reads the states of the utility pins on startup to see what to do. If they are off, then it fires an event.
         void Initalize()
-        {
+        {           
+            this->_stateMap.insert(StatePair(Event::Initalize, new Initial(this)));
+            this->_stateMap.insert(StatePair(Event::Utility_On, new UtilityOn(this)));
+            this->_stateMap.insert(StatePair(Event::Utility_Off, new UtilityOff(this)));
             
-            //this->_stateMap.insert(Event::Initalize, &Initial(*this));
-            this->_stateMap.insert(StatePair(Event::Initalize, new Initial(*this)));
-            this->_stateMap.insert(StatePair(Event::Utility_On, new UtilityOn(*this)));
-            this->_stateMap.insert(StatePair(Event::Utility_Off, new UtilityOff(*this)));
-            // this->_currentState = i;
-            /*
-            this->StateChange(Event::Initalize);
+            this->StateChange(Event::Initalize);         
 
+            this->SetDevices();   
+        }
+
+        void SetDevices()
+        {
             Pin* generatorL1 = this->FindByRole(PinRole::GeneratorOnL1);
             Pin* generatorL2 = this->FindByRole(PinRole::GeneratorOnL2);
 
-            if(generatorL1 == nullptr && generatorL2 == nullptr)
-                throw invalid_argument("No pin roles found for the generator");
-
             if(generatorL1 == nullptr)
-                throw invalid_argument("Generator L1 is required, but L2 is optional.");
-            else if(generatorL2 == nullptr)
-            {
-                Serial.println("No role for Generator L2 pin was not found");
-                _generator = Devices::Generator(*generatorL1)
-            }
-            else
-                _generator = Devices::Generator(*generatorL1, *generatorL2);
+                throw invalid_argument ("No pin roles found for the generator");
+            
+            this->_generator = new Devices::Generator(generatorL1, generatorL2, this);            
 
             Pin* utilityL1 = this->FindByRole(PinRole::UtilityOnL1);
             Pin* utilityL2 = this->FindByRole(PinRole::UtilityOnL2);
-            
-            this->_utility = Devices::Utility(*utilityL1, *utilityL2, this);
-            
+
             if(utilityL1 == nullptr)
-                throw new invalid_argument("No role for Utility L1 pin was not found");
-
-            if(utilityL2 == nullptr)
-                Serial.println("NO role for Utility L2 pin was not found");
+                throw invalid_argument ("No pin roles found for the generator");
             
-            this->_board->DigitalRead(*utilityL1);
+            this->_utility = new Devices::Generator(utilityL1, utilityL2, this); 
 
-            if(!utilityL1->state)
-                this->PinChange(*utilityL1);   
-                    
-            this->_board->DigitalRead(*utilityL2);
+            //Performs the inital read of the state
+            this->_utility->SetPinState(this->_board);
+            this->_generator->SetPinState(this->_board);                      
 
-            if(!utilityL2->state)
-                this->PinChange(*utilityL2);    
-
-                */
+            //It's not on, so trigger the utility off state
+            if(!this->_utility->IsOn())
+                this->StateChange(Event::Utility_Off);
         }
+        
+        void StateChange(Event e)
+        {
+            Serial.println(IEvent::ToName(e).c_str());
+            this->_currentState = this->_stateMap[e];
+            Serial.printf("State change '%s' (%i)\n", IEvent::ToName(e).c_str(), e);
+
+            this->_currentState->DoAction();
+        }        
 
         void PinChange(Pin& pin)
-        {
-            /*
+        {            
             Serial.printf("ChangeListner %s (%i) State=%i\n", pin.name.c_str(), pin.gpio, pin.state);
 
-            this->_utility->PinChange(pin);
-            this->_generator->PinChange(pin);
-
-            printf("****************Change found %s %i*******************\n", pin.name.c_str(), pin.state);
-            */
+            if((pin.role == PinRole::UtilityOnL1 || pin.role == PinRole::UtilityOnL2))
+            {
+                if(pin.state)
+                    this->StateChange(Event::Utility_On);
+                else
+                    this->StateChange(Event::Utility_Off);
+            }            
         }
 
         /// @brief Adds a new pin to the list
@@ -164,8 +147,6 @@ namespace States
         {
             return this->_pins[index];
         }    
-
-       
 
         void StateWaiter()
         {

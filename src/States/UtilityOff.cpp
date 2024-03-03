@@ -8,10 +8,10 @@ namespace States
     class UtilityOff: public IState
     {
        private:
-        IContext _context;
+        IContext* _context;
 
         public:
-        UtilityOff(IContext& context) : _context(context)
+        UtilityOff(IContext* context) : _context(context)
         {
 
         }

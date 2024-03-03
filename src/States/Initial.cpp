@@ -1,6 +1,9 @@
 #pragma once
 #include "States/IState.h"
 #include "States/IContext.h"
+#include "Pin.cpp"
+#include <stdexcept>
+#include "Arduino.h"
 using namespace std;
 
 namespace States
@@ -8,16 +11,17 @@ namespace States
     class Initial: public IState
     {
         private:
-        IContext _context;
+        IContext* _context;
 
         public:
-        Initial(IContext& context) : _context(context)
+        Initial(IContext* context) : _context(context)
         {
 
         }
 
         void DoAction()
         {
+              
 
         }
 

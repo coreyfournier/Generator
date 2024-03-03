@@ -21,20 +21,13 @@ namespace Devices
         public:
         /// @brief Constructor
         /// @param l1 
-        /// @param l2 
+        /// @param l2 optional, nullptr if it doesn't exists
         //, Orchestration& orchestration
-        Utility(Pin& l1, Pin& l2) : _L1(&l1), _L2(&l2)
+        Utility(Pin* l1, Pin* l2)
         //, _orchestrator(orchestration)
         {
-
-        }
-
-        /// @brief Constructor
-        /// @param l1 
-        //, Orchestration& orchestration
-        Utility(Pin& l1) : _L1(&l1), _L2(nullptr)
-        //, _orchestrator(orchestration)
-        {            
+                this->_L1 = l1;
+                this->_L2 = l2;
         }
 
         /// @brief Checks if the utility is on or not
