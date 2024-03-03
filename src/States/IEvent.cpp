@@ -9,27 +9,27 @@ namespace States
     enum Event { 
         Initalize = 0,
         //Startup phases     
-        UtilityOff = 1,
-        UtilityOffWait = 2,
-        UtilityOffWaitDone = 3, 
-        GeneratorStart = 4,
-        GeneratorStarting = 5, 
-        GeneratorOn = 6, 
-        GeneratorWarmUp = 7,
-        GeneratorWarmUpDone = 8,
-        TransferToGenerator = 9,
+        Utility_Off = 1,
+        Utility_Off_Wait = 2,
+        Utility_Off_Wait_Done = 3, 
+        Generator_Start = 4,
+        Generator_Starting = 5, 
+        Generator_On = 6, 
+        Generator_Warm_Up = 7,
+        Generator_Warm_Up_Done = 8,
+        Transfer_To_Generator = 9,
 
         //Shutdown phases
-        UtilityOn = 10,
-        UtilityOnWait = 11,
-        UtilityOnWaitDone = 12,
-        TransferToUtility = 13,
-        GeneratorCoolingDown = 14, 
-        GeneratoredStopping = 15,
-        GeneratorOff = 16, 
+        Utility_On = 10,
+        Utility_On_Wait = 11,
+        Utility_On_Wait_Done = 12,
+        Transfer_To_Utility = 13,
+        Generator_Cooling_Down = 14, 
+        Generatored_Stopping = 15,
+        Generator_Off = 16, 
 
         //Any other events
-        StartFailure = 17,
+        Start_Failure = 17,
         Idle = 18
     };
 

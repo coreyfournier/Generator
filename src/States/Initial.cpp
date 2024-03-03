@@ -1,7 +1,6 @@
 #pragma once
-#include "IState.h"
+#include "States/IState.h"
 #include "States/IContext.h"
-//#include "States/Orchestration.cpp"
 using namespace std;
 
 namespace States

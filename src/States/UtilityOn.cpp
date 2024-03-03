@@ -1,5 +1,5 @@
 #pragma once
-#include "IState.h"
+#include "States/IState.h"
 #include "States/IContext.h"
 using namespace std;
 
@@ -7,7 +7,7 @@ namespace States
 {
     class UtilityOn: public IState
     {
-         private:
+        private:
         IContext _context;
 
         public:

@@ -12,6 +12,8 @@
 #include "IEvent.cpp"
 #include "ChangeMessage.cpp"
 #include "IState.h"
+#include "States/UtilityOn.cpp"
+#include "States/UtilityOff.cpp"
 #include "States/Initial.cpp"
 #include "States/IContext.h"
 
@@ -33,8 +35,6 @@ namespace States
         IState* _currentState;
         std::map<Event, IState*> _stateMap;
         typedef std::pair<Event, IState*> StatePair;
-
-
             
         public:
         /// @brief Constructor
@@ -81,8 +81,11 @@ namespace States
         /// @brief Reads the states of the utility pins on startup to see what to do. If they are off, then it fires an event.
         void Initalize()
         {
+            
             //this->_stateMap.insert(Event::Initalize, &Initial(*this));
             this->_stateMap.insert(StatePair(Event::Initalize, new Initial(*this)));
+            this->_stateMap.insert(StatePair(Event::Utility_On, new UtilityOn(*this)));
+            this->_stateMap.insert(StatePair(Event::Utility_Off, new UtilityOff(*this)));
             // this->_currentState = i;
             /*
             this->StateChange(Event::Initalize);
