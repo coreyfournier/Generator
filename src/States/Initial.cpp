@@ -9,7 +9,7 @@ namespace States
     class Initial: public IState
     {
         private:
-        IContext* _context;
+        IContext _context;
 
         public:
         Initial(IContext& context) : _context(context)

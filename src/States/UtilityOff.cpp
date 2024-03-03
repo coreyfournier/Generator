@@ -1,17 +1,17 @@
 #pragma once
 #include "States/IState.h"
-#include "States/Orchestration.cpp"
+#include "States/IContext.h"
 using namespace std;
 
 namespace States
 {
     class UtilityOff: public IState
     {
-        private:
-        Orchestration _context;
+       private:
+        IContext _context;
 
         public:
-        UtilityOff(Orchestration context) : _context(context)
+        UtilityOff(IContext& context) : _context(context)
         {
 
         }

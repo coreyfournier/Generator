@@ -32,6 +32,8 @@ namespace States
         bool _isUtilityOn = true;
         IState* _currentState;
         std::map<Event, IState*> _stateMap;
+        typedef std::pair<Event, IState*> StatePair;
+
 
             
         public:
@@ -47,7 +49,7 @@ namespace States
             this->_pinQueueChange = xQueueCreate(10, sizeof(ChangeMessage));  
             //Register the states
 
-            this->_stateMap.insert(Event::Initalize, Initial(this));
+            
 
         }
 
@@ -79,8 +81,9 @@ namespace States
         /// @brief Reads the states of the utility pins on startup to see what to do. If they are off, then it fires an event.
         void Initalize()
         {
-            Initial* i = new Initial();
-            this->_currentState = i;
+            //this->_stateMap.insert(Event::Initalize, &Initial(*this));
+            this->_stateMap.insert(StatePair(Event::Initalize, new Initial(*this)));
+            // this->_currentState = i;
             /*
             this->StateChange(Event::Initalize);
 
