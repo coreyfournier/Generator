@@ -3,19 +3,20 @@
 #include <vector>
 #include <stdint.h>
 #include <map>
-#include "IO/PowerState.h"
 #include "IO/IBoardIo.h"
 #include "IPinChangeListner.h"
 #include "ChangeMessage.cpp"
-#include "Devices/Generator.cpp"
-#include "Devices/Utility.cpp"
-#include "IEvent.cpp"
-#include "ChangeMessage.cpp"
-#include "IState.h"
+#include "Devices/PowerDevice.cpp"
+#include "States/IEvent.cpp"
+#include "States/ChangeMessage.cpp"
+#include "States/IState.h"
 #include "States/UtilityOn.cpp"
 #include "States/UtilityOff.cpp"
 #include "States/Initial.cpp"
 #include "States/IContext.h"
+#include "IO/ISerial.h"
+#include "IO/IQueue.h"
+#include <stdio.h>
 
 using namespace std;
 
@@ -24,17 +25,18 @@ namespace States
     class Orchestration : public IPinChangeListner, public IContext
     {
         private:
-        Devices::Generator* _generator;
-        Devices::Generator* _utility;
-        IO::PowerState _powerState;
+        Devices::PowerDevice* _generator;
+        Devices::PowerDevice* _utility;
+        //IO::PowerState _powerState;
         IEvent* _listner;
         IO::IBoardIO*  _board;
         std::vector<Pin> _pins;   
-        QueueHandle_t _pinQueueChange;
+        IO::IQueue* _pinQueueChange;
         bool _isUtilityOn = true;
         IState* _currentState;
         std::map<Event, IState*> _stateMap;
         typedef std::pair<Event, IState*> StatePair;
+        IO::ISerial* _serial;
             
         public:
         /// @brief Constructor
@@ -42,11 +44,15 @@ namespace States
         /// @param board 
         Orchestration(
             IEvent* listner,
-            IO::IBoardIO* board
+            IO::IBoardIO* board,
+            IO::IQueue* queue,
+            IO::ISerial* serial
         ) :  _listner(listner), 
-            _board(board)            
+            _board(board),
+            _pinQueueChange(queue),
+            _serial(serial)            
         {                    
-            this->_pinQueueChange = xQueueCreate(10, sizeof(ChangeMessage));  
+            //this->_pinQueueChange = xQueueCreate(10, sizeof(ChangeMessage));  
             //Register the states
         }
 
@@ -60,7 +66,8 @@ namespace States
 
         void QueueMessage(ChangeMessage& cm)
         {
-            xQueueSendToBackFromISR(this->_pinQueueChange, (void *)&cm, NULL);
+            this->_pinQueueChange->QueueMessage(cm);
+            //xQueueSendToBackFromISR(this->_pinQueueChange, (void *)&cm, NULL);
         }
         
 
@@ -84,7 +91,7 @@ namespace States
             if(generatorL1 == nullptr)
                 throw invalid_argument ("No pin roles found for the generator");
             
-            this->_generator = new Devices::Generator(generatorL1, generatorL2, this);            
+            this->_generator = new Devices::PowerDevice(generatorL1, generatorL2, this);            
 
             Pin* utilityL1 = this->FindByRole(PinRole::UtilityOnL1);
             Pin* utilityL2 = this->FindByRole(PinRole::UtilityOnL2);
@@ -92,7 +99,7 @@ namespace States
             if(utilityL1 == nullptr)
                 throw invalid_argument ("No pin roles found for the generator");
             
-            this->_utility = new Devices::Generator(utilityL1, utilityL2, this); 
+            this->_utility = new Devices::PowerDevice(utilityL1, utilityL2, this); 
 
             //Performs the inital read of the state
             this->_utility->SetPinState(this->_board);
@@ -105,16 +112,17 @@ namespace States
         
         void StateChange(Event e)
         {
-            Serial.println(IEvent::ToName(e).c_str());
+            this->_serial->Println(IEvent::ToName(e).c_str());
             this->_currentState = this->_stateMap[e];
-            Serial.printf("State change '%s' (%i)\n", IEvent::ToName(e).c_str(), e);
+            
+            this->_serial->Println(IO::string_format("State change '%s' (%i)\n", IEvent::ToName(e).c_str(), e));
 
             this->_currentState->DoAction();
         }        
 
         void PinChange(Pin& pin)
         {            
-            Serial.printf("ChangeListner %s (%i) State=%i\n", pin.name.c_str(), pin.gpio, pin.state);
+            this->_serial->Println(IO::string_format("ChangeListner %s (%i) State=%i\n", pin.name.c_str(), pin.gpio, pin.state));
 
             if((pin.role == PinRole::UtilityOnL1 || pin.role == PinRole::UtilityOnL2))
             {
@@ -129,7 +137,7 @@ namespace States
         /// @param pin 
         void AddPin(Pin pin)
         {
-            Serial.printf("Adding pin %s Role:%i\n", pin.name.c_str(), pin.role);
+            this->_serial->Println(IO::string_format("Adding pin %s Role:%i\n", pin.name.c_str(), pin.role));
             this->_pins.push_back(pin);
         }
 
@@ -150,17 +158,16 @@ namespace States
 
         void StateWaiter()
         {
-            Serial.printf("Starting StateWaiter\n");
+            this->_serial->Println(IO::string_format("Starting StateWaiter\n"));
 
             struct ChangeMessage changeMessage;
 
             while(true)
             {
-                xQueueReceive(this->_pinQueueChange, &( changeMessage ), portMAX_DELAY);
+                //xQueueReceive(this->_pinQueueChange, &( changeMessage ), portMAX_DELAY);
+                changeMessage = this->_pinQueueChange->BlockAndDequeue();
                 
-                this->StateChange(changeMessage.event);
-
-                
+                this->StateChange(changeMessage.event);                
             }
         }    
         
@@ -172,7 +179,9 @@ namespace States
                 this->PinChange(pin);
             }
             else
-                Serial.printf("No Change\n");
+            {
+                this->_serial->Println(IO::string_format("No Change\n"));
+            }
 
             pin.state = value;
         }

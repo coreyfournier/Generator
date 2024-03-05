@@ -30,7 +30,8 @@ namespace States
 
         //Any other events
         Start_Failure = 17,
-        Idle = 18
+        Idle = 18,
+        Disable = 19
     };
 
     class IEvent
@@ -42,7 +43,7 @@ namespace States
 
         static string ToName(Event e)
         {
-            static string _enumStrings[19] = { 
+            static string _enumStrings[20] = { 
                 "Initalize",
                 //Startup phases
                 "Utility Off",
@@ -66,7 +67,8 @@ namespace States
 
                 //Error states
                 "StartFailure",
-                "Idle"
+                "Idle",
+                "Disable"
             };
             return _enumStrings[(int)e];
         }

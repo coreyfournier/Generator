@@ -3,7 +3,8 @@
 #include "States/IContext.h"
 #include "Pin.cpp"
 #include <stdexcept>
-#include "Arduino.h"
+//#include "Arduino.h"
+
 using namespace std;
 
 namespace States

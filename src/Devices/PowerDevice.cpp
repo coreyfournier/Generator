@@ -4,7 +4,7 @@
 
 namespace Devices
 {
-    class Generator
+    class PowerDevice
     {
         private:
         Pin* _L1;
@@ -16,7 +16,7 @@ namespace Devices
         /// @brief Constructor
         /// @param l1 
         /// @param l2 optional, nullptr if it doesn't exists
-        Generator(Pin* l1, Pin* l2, IPinChangeListner* o) : _L1(l1), _L2(l2)
+        PowerDevice(Pin* l1, Pin* l2, IPinChangeListner* o) : _L1(l1), _L2(l2)
         {
 
         }

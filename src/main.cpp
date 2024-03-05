@@ -18,17 +18,18 @@
 #include "States/Initial.cpp"
 #include "IO/RtosIO.cpp"
 #include "IO/IBoardIo.h"
+#include "IO/RtosQueue.cpp"
+#include "IO/RtosSerial.cpp"
 
 using namespace std;
 using namespace States;
 
-// Replace with your network credentials
+// Replace with your network credentials set in the environment
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 
 // Set web server port number to 80
 WiFiServer server(80);
-
 
 // Assign output variables to GPIO pins
 //https://learn.adafruit.com/assets/111179
@@ -52,9 +53,13 @@ class EventStub : public IEvent
 
 EventStub es = EventStub();
 IO::RtosIO board = IO::RtosIO();
+IO::RtosQueue queue = IO::RtosQueue();
+IO::RtosSerial s = IO::RtosSerial();
 Orchestration view = Orchestration( 
   &es, 
-  &board);
+  &board,
+  &queue,
+  &s);
 IO::PowerState powerState = IO::PowerState();
 //powerState.RegisterListner(*view);
 

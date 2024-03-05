@@ -1,7 +1,8 @@
 #include <unity.h>
 #include <string>
 #include <stdint.h>
-#include "Orchestration.cpp"
+#include "States/Orchestration.cpp"
+#include "States/IEvent.cpp"
 #include <stdio.h>
 #include <iostream>
 
@@ -22,10 +23,13 @@ void tearDown(void) {
 
 void test_string_substring(void) {
     
+    cout << "\n*************** test_string_substring *********************\n\n";
+
+    UnityPrint("some test here\n");
     uint8_t pin1 = 1;
     uint8_t pin2 = 2;
+/*
 
-/**/
     class ListnerHandler: public IEvent
     {
         public:
@@ -44,13 +48,14 @@ void test_string_substring(void) {
         return 1;
     };
 
-    auto o = new Orchestration(analogReader, pin1, pin2, lh);
+    //auto o = new Orchestration(analogReader, pin1, pin2, lh);
 
     //loop for a few times to simulate things happening over time
     for(int i =0; i< 10; i++)
     {
         //o->SenseChanges();
     }
+    */
     
 
     TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
@@ -62,6 +67,17 @@ int main()
 {
     //delay(2000); // service delay
     UNITY_BEGIN();
+    
+
+    // EventStub es = EventStub();
+    // IO::RtosIO board = IO::RtosIO();
+    // IO::RtosQueue queue = IO::RtosQueue();
+    // IO::RtosSerial s = IO::RtosSerial();
+    // Orchestration view = Orchestration( 
+    // &es, 
+    // &board,
+    // &queue,
+    // &s);
 
     RUN_TEST(test_string_substring);
     UNITY_END(); // stop unit testing
