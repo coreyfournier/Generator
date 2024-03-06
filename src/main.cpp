@@ -36,10 +36,11 @@ WiFiServer server(80);
 const int TransferGPIO = 21;
 const int StartGPIO = 27; //A10 
 const int StopGPIO = 33; //A9 AMessage
+const int L1OnSenseGpio = 15;
+const int L2OnSenseGpio = 32;
+const int GeneratorOnSenseGpio = 14;
 
-Pin L1OnSense = Pin(15, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
-Pin L2OnSense = Pin(32, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
-Pin generatorOnSense = Pin(14, false, "Generator on/off", true, PinRole::GeneratorOnL1);
+
 const gpio_int_type_t int_type = GPIO_INTR_ANYEDGE;
 
 class EventStub : public IEvent
@@ -97,6 +98,9 @@ void setup() {
   Serial.println(WiFi.localIP());
   server.begin();  
 
+  Pin L1OnSense = Pin(L1OnSenseGpio, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
+  Pin L2OnSense = Pin(L2OnSenseGpio, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
+  Pin generatorOnSense = Pin(GeneratorOnSenseGpio, false, "Generator on/off", true, PinRole::GeneratorOnL1);
   view.AddPin(L1OnSense);
   view.AddPin(L2OnSense);
   view.AddPin(generatorOnSense);

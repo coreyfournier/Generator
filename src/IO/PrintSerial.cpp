@@ -21,6 +21,7 @@ namespace IO
         void Println(const std::string& format)
         {
             UnityPrint(format.c_str());
+            
             UnityPrint("\n");
         }
 

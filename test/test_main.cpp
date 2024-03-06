@@ -62,7 +62,17 @@ void test_string_substring(void) {
     &queue,
     &print);
 
-    
+    Pin L1OnSense = Pin(1, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
+    Pin L2OnSense = Pin(2, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
+    Pin generatorOnSense = Pin(3, false, "Generator on/off", true, PinRole::GeneratorOnL1);
+    view.AddPin(L1OnSense);
+    view.AddPin(L2OnSense);
+    view.AddPin(generatorOnSense);
+    view.AddPin(Pin(4, false, "Transfer", PinRole::Transfer));
+    view.AddPin(Pin(5, false, "Start Generator", PinRole::Start));
+    view.AddPin(Pin(6, false, "Stop Generator", PinRole::Stop));
+
+    view.Initalize();
 
     TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
 }
