@@ -13,16 +13,16 @@
 #include "SimpleWeb/Router.h"
 #include "SimpleWeb/IController.h"
 #include "IO/PowerState.h"
-#include "Pin.cpp"
+#include "IO/Pin.cpp"
 #include "States/Orchestration.cpp"
 #include "States/Initial.cpp"
 #include "IO/RtosIO.cpp"
-#include "IO/IBoardIo.h"
 #include "IO/RtosQueue.cpp"
 #include "IO/RtosSerial.cpp"
 
 using namespace std;
 using namespace States;
+using namespace IO;
 
 // Replace with your network credentials set in the environment
 const char* ssid = WIFI_SSID;

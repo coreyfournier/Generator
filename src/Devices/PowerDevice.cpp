@@ -1,6 +1,9 @@
 #pragma once
 #include "IO/IBoardIo.h"
-#include "IPinChangeListner.h"
+#include "IO/IPinChangeListner.h"
+#include "IO/Pin.cpp"
+
+using namespace IO;
 
 namespace Devices
 {

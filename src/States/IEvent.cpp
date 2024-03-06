@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "Pin.cpp"
+#include "IO/Pin.cpp"
 using namespace std;
 
 namespace States

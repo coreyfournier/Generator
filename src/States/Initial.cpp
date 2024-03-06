@@ -1,11 +1,12 @@
 #pragma once
 #include "States/IState.h"
 #include "States/IContext.h"
-#include "Pin.cpp"
+#include "IO/Pin.cpp"
 #include <stdexcept>
 //#include "Arduino.h"
 
 using namespace std;
+using namespace IO;
 
 namespace States
 {

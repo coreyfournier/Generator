@@ -1,5 +1,8 @@
 #pragma once
-#include "Pin.cpp"
+#include "IO/Pin.cpp"
+
+using namespace IO;
+
 namespace States
 {
     class IContext

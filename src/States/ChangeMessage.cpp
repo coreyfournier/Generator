@@ -1,8 +1,9 @@
 #pragma once
 #include <string>
-#include "Pin.cpp"
-#include "IEvent.cpp"
+#include "IO/Pin.cpp"
+#include "States/IEvent.cpp"
 using namespace std;
+using namespace IO;
 
 namespace States
 {

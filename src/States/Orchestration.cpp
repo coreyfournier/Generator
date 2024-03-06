@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <map>
 #include "IO/IBoardIo.h"
-#include "IPinChangeListner.h"
-#include "ChangeMessage.cpp"
+#include "IO/IPinChangeListner.h"
+#include "States/ChangeMessage.cpp"
 #include "Devices/PowerDevice.cpp"
 #include "States/IEvent.cpp"
 #include "States/ChangeMessage.cpp"
@@ -22,7 +22,7 @@ using namespace std;
 
 namespace States
 {
-    class Orchestration : public IPinChangeListner, public IContext
+    class Orchestration : public IO::IPinChangeListner, public IContext
     {
         private:
         Devices::PowerDevice* _generator;
