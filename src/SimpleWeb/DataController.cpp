@@ -10,10 +10,11 @@ namespace SimpleWeb
 {
     class DataController: public IController
     {
-        Orchestration _view;
+        private:
+        States::Orchestration _view;
 
         public:
-        DataController(Orchestration& view): _view(view)
+        DataController(States::Orchestration& view): _view(view)
         {
         }
 
