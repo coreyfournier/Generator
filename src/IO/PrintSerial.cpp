@@ -9,7 +9,7 @@
 namespace IO
 {   
     /// @brief Prints the output to the console
-    class CSerial : public ISerial
+    class PrintSerial : public ISerial
     {
         public:
 
