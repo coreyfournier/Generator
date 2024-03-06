@@ -56,6 +56,11 @@ namespace States
             //Register the states
         }
 
+        IO::ISerial* GetSerialIO()
+        {
+            return this->_serial;
+        }
+
         // /// @brief Gets the current event state
         // /// @return 
         // Event GetState()
@@ -66,6 +71,7 @@ namespace States
 
         void QueueMessage(ChangeMessage& cm)
         {
+            this->_serial->Println("Queuing message");
             this->_pinQueueChange->QueueMessage(cm);
             //xQueueSendToBackFromISR(this->_pinQueueChange, (void *)&cm, NULL);
         }
@@ -78,13 +84,15 @@ namespace States
             this->_stateMap.insert(StatePair(Event::Utility_On, new UtilityOn(this)));
             this->_stateMap.insert(StatePair(Event::Utility_Off, new UtilityOff(this)));
             
-            this->StateChange(Event::Initalize);         
-
-            this->SetDevices();   
+            //This is the initalize
+            this->SetDevices();
+            //this->StateChange(Event::Initalize);                  
         }
 
         void SetDevices()
         {
+            this->_serial->Println("Starting to set devices");
+
             Pin* generatorL1 = this->FindByRole(PinRole::GeneratorOnL1);
             Pin* generatorL2 = this->FindByRole(PinRole::GeneratorOnL2);
 
@@ -108,6 +116,8 @@ namespace States
             //It's not on, so trigger the utility off state
             if(!this->_utility->IsOn())
                 this->StateChange(Event::Utility_Off);
+
+            this->_serial->Println("Done setting devices");
         }
         
         void StateChange(Event e)
@@ -116,6 +126,8 @@ namespace States
             this->_currentState = this->_stateMap[e];
             
             this->_serial->Println(IO::string_format("State change '%s' (%i)\n", IEvent::ToName(e).c_str(), e));
+
+            this->_serial->Println(IO::string_format("GetName(): '%s'", this->_currentState->GetName().c_str()));
 
             this->_currentState->DoAction();
         }        
@@ -165,8 +177,10 @@ namespace States
             while(true)
             {
                 //xQueueReceive(this->_pinQueueChange, &( changeMessage ), portMAX_DELAY);
+                this->_serial->Println(IO::string_format("BlockAndDequeue"));
                 changeMessage = this->_pinQueueChange->BlockAndDequeue();
                 
+                this->_serial->Println(IO::string_format("BlockAndDequeue un blocked"));
                 this->StateChange(changeMessage.event);                
             }
         }    

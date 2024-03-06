@@ -24,7 +24,7 @@ namespace States
         void DoAction()
         {
               
-
+            this->_context->GetSerialIO()->Println("Doing action");
         }
 
         void WaitDone()

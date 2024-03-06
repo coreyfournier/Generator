@@ -1,5 +1,6 @@
 #pragma once
 #include "IO/Pin.cpp"
+#include "IO/ISerial.h"
 
 using namespace IO;
 
@@ -17,5 +18,7 @@ namespace States
         /// @param role 
         /// @return 
         virtual Pin* FindByRole(PinRole role) = 0;
+
+        virtual IO::ISerial* GetSerialIO() = 0;
     };
 }

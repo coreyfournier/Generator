@@ -29,9 +29,12 @@ namespace Devices
             return this->_L1->state && (this->_L2 == nullptr || this->_L2->state);
         }
 
+        /// @brief Gets and sets the pin state for each leg. Does nothing if the leg is nullptr
+        /// @param board 
         void SetPinState(IO::IBoardIO* board)
         {
-            board->DigitalRead(*this->_L2);            
+            if(this->_L1 != nullptr)
+                board->DigitalRead(*this->_L1);            
 
             if(this->_L2 != nullptr)
                 board->DigitalRead(*this->_L2);            

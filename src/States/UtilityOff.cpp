@@ -28,7 +28,7 @@ namespace States
 
         string GetName()
         {
-            return "UtilityOff";
+            return "Utility Off";
         }
     };
 }
