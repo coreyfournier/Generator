@@ -5,7 +5,6 @@
 #include <map>
 #include "IO/IBoardIo.h"
 #include "IO/IPinChangeListner.h"
-#include "States/ChangeMessage.cpp"
 #include "Devices/PowerDevice.cpp"
 #include "States/IEvent.cpp"
 #include "States/ChangeMessage.cpp"

@@ -20,5 +20,7 @@ namespace States
         virtual Pin* FindByRole(PinRole role) = 0;
 
         virtual IO::ISerial* GetSerialIO() = 0;
+
+        virtual void StateChange(Event e) = 0;
     };
 }

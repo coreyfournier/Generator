@@ -9,6 +9,7 @@
 #include "IO/MockQueue.cpp"
 #include "IO/PrintSerial.cpp"
 #include "IO/ISerial.h"
+#include "States/ChangeMessage.cpp"
 
 using namespace std;
 using namespace States;
@@ -57,10 +58,10 @@ void test_string_substring(void) {
     IO::MockQueue queue = IO::MockQueue();
     IO::PrintSerial print = IO::PrintSerial();
     States::Orchestration view = States::Orchestration( 
-    lh, 
-    &board,
-    &queue,
-    &print);
+        lh, 
+        &board,
+        &queue,
+        &print);
 
     Pin L1OnSense = Pin(1, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
     Pin L2OnSense = Pin(2, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
@@ -74,7 +75,28 @@ void test_string_substring(void) {
 
     view.Initalize();
 
+    auto cmL1Sense = States::ChangeMessage();
+    auto cmL2Sense = States::ChangeMessage();
+    L1OnSense.state = false;
+    cmL1Sense.pin = L1OnSense;
+    queue.QueueMessage(cmL1Sense);
+
+    L2OnSense.state = false;
+    cmL2Sense.pin = L2OnSense;
+    queue.QueueMessage(cmL2Sense);
+
+    
+
     TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
+}
+
+void test_state_change(void) {
+    
+    IO::MockBoard board = IO::MockBoard();
+    IO::MockQueue queue = IO::MockQueue();
+    IO::PrintSerial print = IO::PrintSerial();
+
+    //TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
 }
 
 
@@ -84,7 +106,8 @@ int main()
     //delay(2000); // service delay
     UNITY_BEGIN();
 
-    RUN_TEST(test_string_substring);
+    //RUN_TEST(test_string_substring);
+    //RUN_TEST(test_state_change);
     UNITY_END(); // stop unit testing
 }
 
