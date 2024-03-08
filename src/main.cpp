@@ -1,3 +1,5 @@
+#ifndef PIO_UNIT_TESTING
+
 /*********
   Rui Santos
   Complete project details at http://randomnerdtutorials.com  
@@ -248,3 +250,5 @@ void WebsiteTaskHandler(void * pvParameters)
 }
 
 void loop(){}
+
+#endif

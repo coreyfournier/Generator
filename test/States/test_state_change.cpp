@@ -47,34 +47,12 @@ void test_state_change(void) {
     IO::MockBoard board = IO::MockBoard();
     IO::MockQueue queue = IO::MockQueue();
     IO::PrintSerial print = IO::PrintSerial();
-    FakeContext fc* = new FakeContext();
-    States::UtilityOff uo* = new States::UtilityOff(fc);
+    FakeContext* fc = new FakeContext();
+    States::UtilityOff* uo = new States::UtilityOff(fc);
 
     uo->DoAction();
 
+    UnityPrint("test_state_change test here\n");
+
     TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
 }
-
-
-void setUp(void) {
-    
-}
-
-void tearDown(void) {
-    
-}
-
-int main()
-{
-    //delay(2000); // service delay
-    UNITY_BEGIN();
-
-    RUN_TEST(test_state_change);
-    UNITY_END(); // stop unit testing
-}
-
-void loop()
-{
-}
-
-

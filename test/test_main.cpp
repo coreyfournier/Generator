@@ -10,6 +10,7 @@
 #include "IO/PrintSerial.cpp"
 #include "IO/ISerial.h"
 #include "States/ChangeMessage.cpp"
+#include "States/test_state_change.cpp"
 
 using namespace std;
 using namespace States;
@@ -83,22 +84,10 @@ void test_string_substring(void) {
 
     L2OnSense.state = false;
     cmL2Sense.pin = L2OnSense;
-    queue.QueueMessage(cmL2Sense);
-
-    
+    queue.QueueMessage(cmL2Sense);    
 
     TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
 }
-
-void test_state_change(void) {
-    
-    IO::MockBoard board = IO::MockBoard();
-    IO::MockQueue queue = IO::MockQueue();
-    IO::PrintSerial print = IO::PrintSerial();
-
-    //TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
-}
-
 
 
 int main()
@@ -106,10 +95,13 @@ int main()
     //delay(2000); // service delay
     UNITY_BEGIN();
 
+    RUN_TEST(test_state_change);
     //RUN_TEST(test_string_substring);
     //RUN_TEST(test_state_change);
     UNITY_END(); // stop unit testing
 }
+
+
 
 void loop()
 {
