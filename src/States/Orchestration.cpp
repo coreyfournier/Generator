@@ -77,21 +77,42 @@ namespace States
         //     return this->_currentEventState;
         // }
 
+        /// @brief Causes a wait
+        /// @param milliseconds 
+        void Delay(int milliseconds)
+        {
+            this->_board->Delay(milliseconds);
+        }
 
         void QueueMessage(ChangeMessage& cm)
         {
             this->_serial->Println("Queuing message");
             this->_pinQueueChange->QueueMessage(cm);
-            //xQueueSendToBackFromISR(this->_pinQueueChange, (void *)&cm, NULL);
         }
-        
+
+        void PinChanged(Pin& pin, bool requiresRead)
+        {
+            if(requiresRead)
+                this->_board->DigitalRead(pin);
+
+            this->_serial->Println(IO::string_format("ChangeListner %s (%i) State=%i\n", pin.name.c_str(), pin.gpio, pin.state));            
+        }        
 
         /// @brief Reads the states of the utility pins on startup to see what to do. If they are off, then it fires an event.
         void Initalize()
-        {           
+        {   
+            auto utilityOn = new UtilityOn(this);        
+            auto utilityOff = new UtilityOff(this);
+
             this->_stateMap.insert(StatePair(Event::Initalize, new Initial(this)));
-            this->_stateMap.insert(StatePair(Event::Utility_On, new UtilityOn(this)));
-            this->_stateMap.insert(StatePair(Event::Utility_Off, new UtilityOff(this)));
+            
+            this->_stateMap.insert(StatePair(Event::Utility_On, utilityOn));
+            this->_stateMap.insert(StatePair(Event::Utility_On_Wait, utilityOn));
+            this->_stateMap.insert(StatePair(Event::Utility_On_Wait_Done, utilityOn));
+            
+            this->_stateMap.insert(StatePair(Event::Utility_Off, utilityOff));
+            this->_stateMap.insert(StatePair(Event::Utility_Off_Wait, utilityOff));
+            this->_stateMap.insert(StatePair(Event::Utility_Off_Wait_Done, utilityOff));
             
             //This is the initalize
             this->SetDevices();
@@ -124,35 +145,25 @@ namespace States
 
             //It's not on, so trigger the utility off state
             if(!this->_utility->IsOn())
-                this->StateChange(Event::Utility_Off);
+                this->StateChange(Event::Utility_Off, true);
 
             this->_serial->Println("Done setting devices");
         }
         
-        void StateChange(Event e)
+        void StateChange(Event e, bool doAction)
         {
-            this->_serial->Println(IEvent::ToName(e).c_str());
-            this->_currentState = this->_stateMap[e];
+            this->_serial->Println(IO::string_format("State changed '%s' (%i)\n", IEvent::ToName(e).c_str(), e));
             
-            this->_serial->Println(IO::string_format("State change '%s' (%i)\n", IEvent::ToName(e).c_str(), e));
+            if(this->_stateMap[e] != nullptr)
+            {            
+                this->_currentState = this->_stateMap[e];            
 
-            this->_serial->Println(IO::string_format("GetName(): '%s'", this->_currentState->GetName().c_str()));
-
-            this->_currentState->DoAction();
-        }        
-
-        void PinChange(Pin& pin)
-        {            
-            this->_serial->Println(IO::string_format("ChangeListner %s (%i) State=%i\n", pin.name.c_str(), pin.gpio, pin.state));
-
-            if((pin.role == PinRole::UtilityOnL1 || pin.role == PinRole::UtilityOnL2))
-            {
-                if(pin.state)
-                    this->StateChange(Event::Utility_On);
-                else
-                    this->StateChange(Event::Utility_Off);
-            }            
-        }
+                this->_serial->Println(IO::string_format("Current State GetName(): '%s'", this->_currentState->GetName().c_str()));
+                
+                if(doAction)
+                    this->_currentState->DoAction();
+            }
+        }   
 
         /// @brief Adds a new pin to the list
         /// @param pin 
@@ -177,8 +188,12 @@ namespace States
             return this->_pins[index];
         }    
 
-        void StateWaiter()
+        /// @brief Waits for pin change events and sets the pin values 
+        void WaitAndListen()
         {
+            this->_serial->Println(IO::string_format("Starting Initalize\n"));
+            this->Initalize();
+            
             this->_serial->Println(IO::string_format("Starting StateWaiter\n"));
 
             struct ChangeMessage changeMessage;
@@ -190,7 +205,7 @@ namespace States
                 changeMessage = this->_pinQueueChange->BlockAndDequeue();
                 
                 this->_serial->Println(IO::string_format("BlockAndDequeue un blocked"));
-                this->StateChange(changeMessage.event);                
+                this->StateChange(changeMessage.event, true);                
             }
         }    
         
@@ -199,7 +214,7 @@ namespace States
             if(value != pin.state)
             {
                 this->_board->DigitalWrite(pin, value);
-                this->PinChange(pin);
+                this->PinChanged(pin, false);
             }
             else
             {

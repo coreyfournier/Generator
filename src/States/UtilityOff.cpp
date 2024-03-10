@@ -17,16 +17,14 @@ namespace States
         }
 
         void DoAction()
-        {
-            
+        {            
             this->_context->GetSerialIO()->Println("Utility off do action");
 
-            this->_context->StateChange(Event::Utility_Off_Wait);
-        }
+            this->_context->StateChange(Event::Utility_Off_Wait, false);
+            this->_context->Delay(2000);
+            this->_context->StateChange(Event::Utility_Off_Wait_Done, false);
 
-        void WaitDone()
-        {
-            
+            this->_context->GetSerialIO()->Println("Utility off all finished");
         }
 
         string GetName()

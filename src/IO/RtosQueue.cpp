@@ -1,3 +1,5 @@
+#ifndef PIO_UNIT_TESTING
+
 #pragma once
 #include "IQueue.h"
 #include "Arduino.h"
@@ -34,3 +36,4 @@ namespace IO
     
 } // namespace IO
 
+#endif

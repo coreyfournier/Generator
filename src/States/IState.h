@@ -13,7 +13,5 @@ namespace States
         virtual string GetName() = 0;
         /// @brief Performs the action of the state
         virtual void DoAction() = 0;
-        /// @brief Fires after the action caused a wait
-        virtual void WaitDone() = 0;
     };
 }

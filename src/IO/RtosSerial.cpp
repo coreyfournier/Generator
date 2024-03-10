@@ -1,3 +1,5 @@
+#ifndef PIO_UNIT_TESTING
+
 #pragma once
 #include "ISerial.h"
 #include <stdio.h>
@@ -24,3 +26,4 @@ namespace IO
 
     };
 }
+#endif

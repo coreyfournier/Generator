@@ -21,6 +21,7 @@
 #include "IO/RtosIO.cpp"
 #include "IO/RtosQueue.cpp"
 #include "IO/RtosSerial.cpp"
+#include "States/ChangeMessage.cpp"
 
 using namespace std;
 using namespace States;
@@ -67,8 +68,6 @@ Orchestration view = Orchestration(
   &board,
   &queue,
   &s);
-IO::PowerState powerState = IO::PowerState();
-//powerState.RegisterListner(*view);
 
 TaskHandle_t webSiteTask;
 TaskHandle_t sensorTask;
@@ -172,62 +171,41 @@ void setup() {
   //AMessage xMessage;
 
   //tsqueue = xQueueCreate(4, sizeof(xMessage));
+
    
   xTaskCreatePinnedToCore(
-          IO::PowerState::StateChangeTaskHandler,   /* Task function. */
+        /* Task function. */
+          [](void *params){ view.WaitAndListen(); },
+          //IO::PowerState::StateChangeTaskHandler,   
           "Interupt Task Handler",     /* name of task. */
-          10000,       /* Stack size of task */
-          &powerState.tsqueue,
-          2,           /* priority of the task */
-          NULL,      /* Task handle to keep track of created task */
-          1);          /* pin task to core 1 */ 
-
-  xTaskCreatePinnedToCore(     
-      //[](const Bar & first, const Bar & second) { return ...; }     
-          [](void *params){ view.StateWaiter(); },   /* Task function. */
-          "Change Task Handler",     /* name of task. */
           10000,       /* Stack size of task */
           NULL,
           3,           /* priority of the task */
           NULL,      /* Task handle to keep track of created task */
           1);          /* pin task to core 1 */ 
 
+
   //Listen for the state changes
   attachInterrupt(digitalPinToInterrupt(generatorOnSense.gpio), generatorSenseChange, CHANGE);
   attachInterrupt(digitalPinToInterrupt(L1OnSense.gpio), L1SenseChange, CHANGE);
   attachInterrupt(digitalPinToInterrupt(L2OnSense.gpio), L2SenseChange, CHANGE);
   
-  view.Initalize();
+  
 }
 
 void generatorSenseChange()
 {
-    uint32_t now = xTaskGetTickCountFromISR();
-    IO::AMessage pxPointerToxMessage;
-
-    pxPointerToxMessage.pin = &generatorOnSense;
-    pxPointerToxMessage.time = now;
-    xQueueSendToBackFromISR(powerState.tsqueue, (void *)&pxPointerToxMessage, NULL);
+  view.PinChanged(generatorOnSense, true);
 }
 
 void L1SenseChange()
 {
-    uint32_t now = xTaskGetTickCountFromISR();
-    IO::AMessage pxPointerToxMessage;
-
-    pxPointerToxMessage.pin = &L1OnSense;
-    pxPointerToxMessage.time = now;
-    xQueueSendToBackFromISR(powerState.tsqueue, (void *)&pxPointerToxMessage, NULL);
+  view.PinChanged(L1OnSense, true);
 }
 
 void L2SenseChange()
 {
-    uint32_t now = xTaskGetTickCountFromISR();
-    IO::AMessage pxPointerToxMessage;
-
-    pxPointerToxMessage.pin = &L2OnSense;
-    pxPointerToxMessage.time = now;
-    xQueueSendToBackFromISR(powerState.tsqueue, (void *)&pxPointerToxMessage, NULL);
+  view.PinChanged(L2OnSense, true);
 }
 
 void WebsiteTaskHandler(void * pvParameters)

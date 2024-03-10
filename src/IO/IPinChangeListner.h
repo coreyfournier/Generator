@@ -6,6 +6,6 @@ namespace IO
     class IPinChangeListner
     {
         public:
-        virtual void PinChange(Pin& pin) = 0;    
+        virtual void PinChanged(Pin& pin, bool requiresRead) = 0;    
     };
 }

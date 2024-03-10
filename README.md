@@ -17,6 +17,7 @@ Install platformio plugin.
 You need to install mingw and set the bin folder to the path.
 Download here: https://github.com/niXman/mingw-builds-binaries/releases
 From the platform io widget Open Native, Open Advanced, and run Test.
+If the code continues to be grayed out after a run, go to featheresp32 -> Miscellaneous and Rebuild IntelliSense Index.
 
 ## Wifi
 set ENV_WIFI_PW and ENV_WIFI_SSID in your environment with the ssid and password

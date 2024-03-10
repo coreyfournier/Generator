@@ -1,3 +1,4 @@
+#ifndef PIO_UNIT_TESTING
 #pragma once
 #include <ArduinoJson.h>
 #include "Pin.cpp"
@@ -32,3 +33,4 @@ namespace IO
         }
     };
 }
+#endif

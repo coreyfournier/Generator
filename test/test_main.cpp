@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <iostream>
 #include "IO/MockBoard.cpp"
-#include "IO/MockQueue.cpp"
+#include "IO/SimpleQueue.cpp"
 #include "IO/PrintSerial.cpp"
 #include "IO/ISerial.h"
 #include "States/ChangeMessage.cpp"
@@ -55,7 +55,7 @@ void test_string_substring(void) {
     };    
     
     IO::MockBoard board = IO::MockBoard();
-    IO::MockQueue queue = IO::MockQueue();
+    IO::SimpleQueue queue = IO::SimpleQueue();
     IO::PrintSerial print = IO::PrintSerial();
     States::Orchestration view = States::Orchestration( 
         lh, 
@@ -95,8 +95,8 @@ int main()
     //delay(2000); // service delay
     UNITY_BEGIN();
 
-    RUN_TEST(test_state_change);
-    //RUN_TEST(test_string_substring);
+    //RUN_TEST(test_state_change);
+    RUN_TEST(test_string_substring);
     //RUN_TEST(test_state_change);
     UNITY_END(); // stop unit testing
 }

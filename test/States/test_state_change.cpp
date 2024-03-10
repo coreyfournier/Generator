@@ -6,12 +6,13 @@
 #include <stdio.h>
 #include <iostream>
 #include "IO/MockBoard.cpp"
-#include "IO/MockQueue.cpp"
+#include "IO/SimpleQueue.cpp"
 #include "IO/PrintSerial.cpp"
 #include "IO/ISerial.h"
 #include "States/ChangeMessage.cpp"
 #include "States/UtilityOff.cpp"
 #include "Devices/PowerDevice.cpp"
+
 
 using namespace std;
 using namespace States;
@@ -31,6 +32,11 @@ class FakeContext: public IContext
 
     }
 
+    void Delay(int milliseconds)
+    {
+
+    }
+
     Pin* FindByGpio(int gpio)
     {
         return nullptr;
@@ -46,7 +52,7 @@ class FakeContext: public IContext
         return this->print;
     }
 
-    void StateChange(Event e)
+    void StateChange(Event e, bool doAction)
     {
         this->print->Println(IEvent::ToName(e).c_str());
     }
@@ -66,7 +72,7 @@ class FakeContext: public IContext
 void test_state_change(void) {
     
     IO::MockBoard board = IO::MockBoard();
-    IO::MockQueue queue = IO::MockQueue();
+    IO::SimpleQueue queue = IO::SimpleQueue();
     IO::PrintSerial print = IO::PrintSerial();
     FakeContext* fc = new FakeContext();
     States::UtilityOff* uo = new States::UtilityOff(fc);

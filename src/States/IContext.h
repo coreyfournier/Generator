@@ -23,7 +23,10 @@ namespace States
 
         virtual IO::ISerial* GetSerialIO() = 0;
 
-        virtual void StateChange(Event e) = 0;
+        /// @brief Changes the state
+        /// @param e 
+        /// @param doAction Allows a state to change, but not action taken. This is necessary for sub states like waits.
+        virtual void StateChange(Event e, bool doAction) = 0;
 
         /// @brief Gets the utility control. nullptr if not found or set
         /// @return 
@@ -32,5 +35,9 @@ namespace States
         /// @brief Gets the generator control. nullptr if not found or set
         /// @return 
         virtual Devices::PowerDevice* GetGenerator() = 0;
+
+        /// @brief Causes a wait
+        /// @param milliseconds 
+        virtual void Delay(int milliseconds) = 0;
     };
 }

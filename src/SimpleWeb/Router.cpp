@@ -1,3 +1,5 @@
+#ifndef PIO_UNIT_TESTING
+
 #pragma once
 #include <vector>
 #include <WiFi.h>
@@ -86,3 +88,4 @@ namespace SimpleWeb
         }
     }
 }
+#endif

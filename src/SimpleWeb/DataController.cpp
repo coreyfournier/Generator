@@ -1,3 +1,4 @@
+#ifndef PIO_UNIT_TESTING
 #pragma once
 #include <ArduinoJson.h>
 #include "Router.h"
@@ -121,3 +122,4 @@ namespace SimpleWeb
     };
 
 }
+#endif
