@@ -27,7 +27,6 @@ void tearDown(void) {
     STR_TO_TEST = "";
 }
 
-
 void test_string_substring(void) {
     
     cout << "\n*************** test_string_substring *********************\n\n";
@@ -88,6 +87,7 @@ void test_string_substring(void) {
 
     TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
 }
+
 
 
 int main()

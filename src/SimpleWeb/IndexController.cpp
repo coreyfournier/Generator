@@ -1,4 +1,6 @@
 #pragma once
+
+#ifndef PIO_UNIT_TESTING
 #include <iostream>
 #include <fstream>
 #include "FS.h"
@@ -56,3 +58,4 @@ namespace SimpleWeb
     };
 
 }
+#endif

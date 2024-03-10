@@ -11,6 +11,7 @@
 #include "IO/ISerial.h"
 #include "States/ChangeMessage.cpp"
 #include "States/UtilityOff.cpp"
+#include "Devices/PowerDevice.cpp"
 
 using namespace std;
 using namespace States;
@@ -18,16 +19,26 @@ using namespace States;
 class FakeContext: public IContext
 {
     IO::PrintSerial* print = new IO::PrintSerial();
+    Pin* _utilityL1 = new Pin(1, false, "Utility L1", PinRole::UtilityOnL1);
+    Pin* _generatorL1 = new Pin(3, false, "Generator L1", PinRole::GeneratorOnL1);
+
+    Devices::PowerDevice* _generator = new Devices::PowerDevice(_generatorL1);
+    Devices::PowerDevice* _utility = new Devices::PowerDevice(_utilityL1);
 
     public:
+    FakeContext()
+    {
+
+    }
+
     Pin* FindByGpio(int gpio)
     {
-        return new Pin();
+        return nullptr;
     }
 
     Pin* FindByRole(PinRole role) {
 
-        return new Pin();
+        return nullptr;
     }
 
     IO::ISerial* GetSerialIO()
@@ -37,7 +48,17 @@ class FakeContext: public IContext
 
     void StateChange(Event e)
     {
+        this->print->Println(IEvent::ToName(e).c_str());
+    }
 
+    Devices::PowerDevice* GetUtility()
+    {
+        return nullptr;
+    }
+    
+    Devices::PowerDevice* GetGenerator()
+    {
+        return nullptr;
     }
 };
 

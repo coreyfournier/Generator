@@ -60,6 +60,16 @@ namespace States
             return this->_serial;
         }
 
+        Devices::PowerDevice* GetUtility()
+        {
+            return this->_utility;
+        }        
+        
+        Devices::PowerDevice* GetGenerator()
+        {
+            return this->_generator;
+        }
+
         // /// @brief Gets the current event state
         // /// @return 
         // Event GetState()

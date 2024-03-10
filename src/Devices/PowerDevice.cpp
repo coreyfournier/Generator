@@ -24,6 +24,13 @@ namespace Devices
 
         }
 
+        /// @brief Constructor
+        /// @param l1 
+        PowerDevice(Pin* l1) : _L1(l1), _L2(nullptr)
+        {
+
+        }
+
         bool IsOn()
         {
             return this->_L1->state && (this->_L2 == nullptr || this->_L2->state);

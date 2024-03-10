@@ -18,7 +18,10 @@ namespace States
 
         void DoAction()
         {
-            //this->_context.
+            
+            this->_context->GetSerialIO()->Println("Utility off do action");
+
+            this->_context->StateChange(Event::Utility_Off_Wait);
         }
 
         void WaitDone()

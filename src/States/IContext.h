@@ -1,6 +1,8 @@
 #pragma once
 #include "IO/Pin.cpp"
 #include "IO/ISerial.h"
+#include "Devices/PowerDevice.cpp"
+#include "States/IEvent.cpp"
 
 using namespace IO;
 
@@ -22,5 +24,13 @@ namespace States
         virtual IO::ISerial* GetSerialIO() = 0;
 
         virtual void StateChange(Event e) = 0;
+
+        /// @brief Gets the utility control. nullptr if not found or set
+        /// @return 
+        virtual Devices::PowerDevice* GetUtility() = 0;
+        
+        /// @brief Gets the generator control. nullptr if not found or set
+        /// @return 
+        virtual Devices::PowerDevice* GetGenerator() = 0;
     };
 }
