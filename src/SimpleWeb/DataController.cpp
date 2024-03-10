@@ -12,10 +12,10 @@ namespace SimpleWeb
     class DataController: public IController
     {
         private:
-        States::Orchestration _view;
+        States::Orchestration* _view;
 
         public:
-        DataController(States::Orchestration& view): _view(view)
+        DataController(States::Orchestration* view): _view(view)
         {
         }
 
@@ -45,7 +45,7 @@ namespace SimpleWeb
                 else
                 {
                     int gpio = doc["gpio"].as<int>();                         
-                    Pin* foundPin = _view.FindByGpio(gpio);
+                    Pin* foundPin = this->_view->FindByGpio(gpio);
 
                     if(foundPin == nullptr)
                     {
@@ -56,17 +56,17 @@ namespace SimpleWeb
                     {
                         if(doc["state"].as<bool>())
                         {
-                            this->_view.DigitalWrite(*foundPin, true);
+                            this->_view->DigitalWrite(*foundPin, true);
 
                             if(foundPin->role == PinRole::Start || foundPin->role == PinRole::Stop)
                             {
                                 vTaskDelay(1000);
-                                this->_view.DigitalWrite(*foundPin, false);
+                                this->_view->DigitalWrite(*foundPin, false);
                             }
                         }
                         else
                         {
-                            this->_view.DigitalWrite(*foundPin, false);                            
+                            this->_view->DigitalWrite(*foundPin, false);                            
                         }
 
                         doc["state"] = foundPin->state;
@@ -100,13 +100,13 @@ namespace SimpleWeb
                 client.println(); 
                 
                 Serial.printf("data...");
-                Serial.printf("pins=%i\n", _view.PinCount());
+                Serial.printf("pins=%i\n", this->_view->PinCount());
 
-                for(int i=0; i< _view.PinCount(); i++)
+                for(int i=0; i< this->_view->PinCount(); i++)
                 {
-                    Pin pin = _view.GetPin(i);
+                    Pin pin = this->_view->GetPin(i);
                     Serial.printf("digitalRead... %s %i\n",pin.name.c_str(), pin.gpio);
-                    pin.state = this->_view.DigitalRead(pin);
+                    pin.state = this->_view->DigitalRead(pin);
                     doc["pins"][i]["gpio"] = pin.gpio;
                     doc["pins"][i]["state"] = pin.state;
                     doc["pins"][i]["name"] = pin.name;

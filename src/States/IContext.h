@@ -25,8 +25,7 @@ namespace States
 
         /// @brief Changes the state
         /// @param e 
-        /// @param doAction Allows a state to change, but not action taken. This is necessary for sub states like waits.
-        virtual void StateChange(Event e, bool doAction) = 0;
+        virtual void StateChange(Event e) = 0;
 
         /// @brief Gets the utility control. nullptr if not found or set
         /// @return 

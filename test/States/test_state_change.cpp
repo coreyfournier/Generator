@@ -52,7 +52,7 @@ class FakeContext: public IContext
         return this->print;
     }
 
-    void StateChange(Event e, bool doAction)
+    void StateChange(Event e)
     {
         this->print->Println(IEvent::ToName(e).c_str());
     }

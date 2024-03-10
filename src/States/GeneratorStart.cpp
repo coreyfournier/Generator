@@ -17,6 +17,21 @@ namespace States
 
         void DoAction()
         {
+            auto utility = this->_context.GetUtility();
+            auto generator = this->_context.GetGenerator();
+
+            if(!utility->IsOn())
+                this->_context.StateChange(Event::Utility_On);
+            else
+            {
+                if(generator->IsOn())
+                    this->_context.StateChange(Event::Generator_On);
+                else
+                {
+                    //Start the generator  
+                    
+                }
+            }
             //this->_context.
         }
 

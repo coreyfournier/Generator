@@ -22,6 +22,9 @@
 #include "IO/RtosQueue.cpp"
 #include "IO/RtosSerial.cpp"
 #include "States/ChangeMessage.cpp"
+#include "Devices/PowerDevice.cpp"
+#include "Devices/StartableDevice.cpp"
+#include "Devices/TransferSwitch.cpp"
 
 using namespace std;
 using namespace States;
@@ -45,8 +48,21 @@ const int GeneratorOnSenseGpio = 14;
 
 Pin L1OnSense = Pin(L1OnSenseGpio, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
 Pin L2OnSense = Pin(L2OnSenseGpio, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
-Pin generatorOnSense = Pin(GeneratorOnSenseGpio, false, "Generator on/off", true, PinRole::GeneratorOnL1);
+Pin generatorL1OnSense = Pin(GeneratorOnSenseGpio, false, "Generator on/off", true, PinRole::GeneratorOnL1);
+Pin transfer = Pin(TransferGPIO, false, "Transfer", PinRole::Transfer);
+Pin genStart = Pin(StartGPIO, false, "Start Generator", PinRole::Start);
+Pin genStop = Pin(StopGPIO, false, "Stop Generator", PinRole::Stop);
+IO::RtosIO board = IO::RtosIO();
 
+Devices::StartableDevice generator = Devices::StartableDevice(
+  &generatorL1OnSense,
+  nullptr,
+  &genStart,
+  &genStop,
+  &board
+);
+Devices::PowerDevice utility = Devices::PowerDevice(&L1OnSense, &L2OnSense, &board);
+Devices::TransferSwitch transferSwitch = Devices::TransferSwitch(&transfer, &board);
 
 const gpio_int_type_t int_type = GPIO_INTR_ANYEDGE;
 
@@ -60,11 +76,14 @@ class EventStub : public IEvent
 };
 
 EventStub es = EventStub();
-IO::RtosIO board = IO::RtosIO();
+
 IO::RtosQueue queue = IO::RtosQueue();
 IO::RtosSerial s = IO::RtosSerial();
-Orchestration view = Orchestration( 
+Orchestration* view = new Orchestration( 
   &es, 
+  &utility,
+  &generator,
+  &transferSwitch,
   &board,
   &queue,
   &s);
@@ -73,9 +92,6 @@ TaskHandle_t webSiteTask;
 TaskHandle_t sensorTask;
 
 void WebsiteTaskHandler(void * pvParameters );
-void SensorTaskHandler(void * pvParameters );
-void vHandlingTask(void * pvParameters );
-void vANInterruptHandler( void );
 void generatorSenseChange();
 void L1SenseChange();
 void L2SenseChange();
@@ -103,31 +119,25 @@ void setup() {
   Serial.println(WiFi.localIP());
   server.begin();  
 
- 
-  view.AddPin(L1OnSense);
-  view.AddPin(L2OnSense);
-  view.AddPin(generatorOnSense);
 
   /*Configure all of the GPIO pins*/
   pinMode(TransferGPIO, OUTPUT);
-  digitalWrite(TransferGPIO, LOW);
+  digitalWrite(TransferGPIO, LOW); 
   
-  view.AddPin(Pin(TransferGPIO, false, "Transfer", PinRole::Transfer));
 
+  /*NOTE: this needs to be moved into the board operations**/
   pinMode(StartGPIO, OUTPUT);
   digitalWrite(StartGPIO, LOW);
-  view.AddPin(Pin(StartGPIO, false, "Start Generator", PinRole::Start));
-
   pinMode(StopGPIO, OUTPUT);
-  digitalWrite(StopGPIO, LOW);
-  view.AddPin(Pin(StopGPIO, false, "Stop Generator", PinRole::Stop));
+  digitalWrite(StopGPIO, LOW);  
+  pinMode(L1OnSense.gpio, INPUT);
+  pinMode(L2OnSense.gpio, INPUT);
+  pinMode(generatorL1OnSense.gpio, INPUT);
 
    /* Input pins */
   gpio_int_type_t tt;
   
-  pinMode(L1OnSense.gpio, INPUT);
-  pinMode(L2OnSense.gpio, INPUT);
-  pinMode(generatorOnSense.gpio, INPUT);
+
   //gpio_set_intr_type((gpio_num_t)GeneratorOnSenseGPIO, GPIO_INTR_ANYEDGE);
 
     // gpio_config_t io_conf = {};
@@ -159,24 +169,10 @@ void setup() {
   
   delay(500);
 
-  // xTaskCreatePinnedToCore(
-  //     SensorTaskHandler,   /* Task function. */
-  //     "SensorTask",     /* name of task. */
-  //     10000,       /* Stack size of task */
-  //     NULL,        /* parameter of the task */
-  //     1,           /* priority of the task */
-  //     &sensorTask,      /* Task handle to keep track of created task */
-  //     1);          /* pin task to core 1 */
-   
-  //AMessage xMessage;
-
-  //tsqueue = xQueueCreate(4, sizeof(xMessage));
-
    
   xTaskCreatePinnedToCore(
         /* Task function. */
-          [](void *params){ view.WaitAndListen(); },
-          //IO::PowerState::StateChangeTaskHandler,   
+          [](void *params){ view->WaitAndListen(); },
           "Interupt Task Handler",     /* name of task. */
           10000,       /* Stack size of task */
           NULL,
@@ -186,26 +182,26 @@ void setup() {
 
 
   //Listen for the state changes
-  attachInterrupt(digitalPinToInterrupt(generatorOnSense.gpio), generatorSenseChange, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(generatorL1OnSense.gpio), generatorSenseChange, CHANGE);
   attachInterrupt(digitalPinToInterrupt(L1OnSense.gpio), L1SenseChange, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(L2OnSense.gpio), L2SenseChange, CHANGE);
-  
-  
+  attachInterrupt(digitalPinToInterrupt(L2OnSense.gpio), L2SenseChange, CHANGE);  
+
+  view->PinCount();
 }
 
 void generatorSenseChange()
 {
-  view.PinChanged(generatorOnSense, true);
+  view->PinChanged(generatorL1OnSense, true);
 }
 
 void L1SenseChange()
 {
-  view.PinChanged(L1OnSense, true);
+  view->PinChanged(L1OnSense, true);
 }
 
 void L2SenseChange()
 {
-  view.PinChanged(L2OnSense, true);
+  view->PinChanged(L2OnSense, true);
 }
 
 void WebsiteTaskHandler(void * pvParameters)

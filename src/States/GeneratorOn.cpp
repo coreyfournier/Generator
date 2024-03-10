@@ -1,5 +1,8 @@
 #include "IState.h"
 #include "Orchestration.cpp"
+#include "Devices/PowerDevice.cpp"
+#include "Devices/StartableDevice.cpp"
+#include "Devices/TransferSwitch.cpp"
 using namespace std;
 
 namespace States
@@ -10,7 +13,7 @@ namespace States
         Orchestration _context;
 
         public:
-        GeneratorOn(Orchestration context) : _context(context)
+        GeneratorOn(Orchestration& context) : _context(context)
         {
 
         }

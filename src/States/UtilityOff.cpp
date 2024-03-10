@@ -7,9 +7,9 @@ namespace States
 {
     class UtilityOff: public IState
     {
-       private:
+        private:
         IContext* _context;
-
+        
         public:
         UtilityOff(IContext* context) : _context(context)
         {
@@ -20,11 +20,22 @@ namespace States
         {            
             this->_context->GetSerialIO()->Println("Utility off do action");
 
-            this->_context->StateChange(Event::Utility_Off_Wait, false);
+            this->_context->StateChange(Event::Utility_Off_Wait);
             this->_context->Delay(2000);
-            this->_context->StateChange(Event::Utility_Off_Wait_Done, false);
-
-            this->_context->GetSerialIO()->Println("Utility off all finished");
+            
+            this->_context->StateChange(Event::Utility_Off_Wait_Done);
+            
+            auto utility = this->_context->GetUtility();
+            if(utility->IsOn())
+                this->_context->StateChange(Event::Utility_On);
+            else
+            {
+                auto generator = this->_context->GetGenerator();
+                if(generator->IsOn())
+                    this->_context->StateChange(Event::Generator_On);
+                else
+                    this->_context->StateChange(Event::Generator_Start);
+            }    
         }
 
         string GetName()

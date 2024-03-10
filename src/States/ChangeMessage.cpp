@@ -10,11 +10,14 @@ namespace States
     struct ChangeMessage
     {
         Event event;
-        Pin pin;
+        Pin* pin;
         
         ChangeMessage(){}
 
-        ChangeMessage(Event e, Pin& pin)
+        /// @brief 
+        /// @param e 
+        /// @param pin set to nullptr if this is just a state change with out a specific pin
+        ChangeMessage(Event e, Pin* pin)
         {
             this->pin = pin;
             this->event = e;

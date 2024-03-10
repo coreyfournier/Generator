@@ -6,6 +6,8 @@
 #include "IO/IBoardIo.h"
 #include "IO/IPinChangeListner.h"
 #include "Devices/PowerDevice.cpp"
+#include "Devices/StartableDevice.cpp"
+#include "Devices/TransferSwitch.cpp"
 #include "States/IEvent.cpp"
 #include "States/ChangeMessage.cpp"
 #include "States/IState.h"
@@ -15,6 +17,8 @@
 #include "States/IContext.h"
 #include "IO/ISerial.h"
 #include "IO/IQueue.h"
+#include "Devices/IPinList.h"
+
 #include <stdio.h>
 
 using namespace std;
@@ -24,18 +28,40 @@ namespace States
     class Orchestration : public IO::IPinChangeListner, public IContext
     {
         private:
-        Devices::PowerDevice* _generator;
+        Devices::StartableDevice* _generator;
         Devices::PowerDevice* _utility;
-        //IO::PowerState _powerState;
+        Devices::TransferSwitch* _transferSwitch;        
         IEvent* _listner;
-        IO::IBoardIO*  _board;
         std::vector<Pin> _pins;   
         IO::IQueue* _pinQueueChange;
         bool _isUtilityOn = true;
         IState* _currentState;
+        /// @brief Current event for the current state. A state can have sub events.
+        Event _currentEvent;
         std::map<Event, IState*> _stateMap;
         typedef std::pair<Event, IState*> StatePair;
         IO::ISerial* _serial;
+        IO::IBoardIO* _board;
+
+        /// @brief Creates a comprehensive list of all of the pins used.
+        /// @param pinList 
+        void AddDevicePins(Devices::IPinList* pinList)
+        {
+            if(pinList != nullptr)
+            {
+                auto allPins = pinList->GetPins();
+                
+                this->_serial->Println(IO::string_format("loading pins %i\n", allPins.size()));            
+
+                for(int i=0; i< allPins.size(); i++)
+                {
+                    this->_serial->Println(IO::string_format("loading pin %s\n", allPins[i].name.c_str()));            
+                    this->_pins.push_back(allPins[i]);
+                }
+            }
+   
+            this->_serial->Println(IO::string_format("PinCount %i address:%i\n", this->_pins.size(), &this->_pins));                   
+        }
             
         public:
         /// @brief Constructor
@@ -43,16 +69,21 @@ namespace States
         /// @param board 
         Orchestration(
             IEvent* listner,
+            Devices::PowerDevice* utility,
+            Devices::StartableDevice* generator,
+            Devices::TransferSwitch* transferSwitch, 
             IO::IBoardIO* board,
             IO::IQueue* queue,
             IO::ISerial* serial
         ) :  _listner(listner), 
+            _utility(utility),
+            _generator(generator),
+            _transferSwitch(transferSwitch),
             _board(board),
             _pinQueueChange(queue),
             _serial(serial)            
         {                    
-            //this->_pinQueueChange = xQueueCreate(10, sizeof(ChangeMessage));  
-            //Register the states
+            
         }
 
         IO::ISerial* GetSerialIO()
@@ -65,7 +96,7 @@ namespace States
             return this->_utility;
         }        
         
-        Devices::PowerDevice* GetGenerator()
+        Devices::StartableDevice* GetGenerator()
         {
             return this->_generator;
         }
@@ -84,19 +115,32 @@ namespace States
             this->_board->Delay(milliseconds);
         }
 
-        void QueueMessage(ChangeMessage& cm)
-        {
-            this->_serial->Println("Queuing message");
-            this->_pinQueueChange->QueueMessage(cm);
-        }
-
+        /// @brief Handles the event when the pin changes. Updates the pin, and will fire an event to wake up the system if necessary
+        /// @param pin 
+        /// @param requiresRead 
         void PinChanged(Pin& pin, bool requiresRead)
         {
+            /**
+             * !!!!!!!!!!!!!!This will need some kind of event to trigger a state when the generator is at idle!!!!!!!!!!!!!
+             */
             if(requiresRead)
                 this->_board->DigitalRead(pin);
 
             this->_serial->Println(IO::string_format("ChangeListner %s (%i) State=%i\n", pin.name.c_str(), pin.gpio, pin.state));            
-        }        
+        }     
+
+        void StateChange(ChangeMessage& cm)
+        {
+            this->_serial->Println("Queuing message");
+            this->_serial->Println(IO::string_format("State changed '%s' (%i)\n", IEvent::ToName(cm.event).c_str(), cm.event));                        
+            this->_pinQueueChange->QueueMessage(cm);
+        }
+
+        void StateChange(Event e)
+        {
+            ChangeMessage cm = ChangeMessage(e, nullptr);
+            this->StateChange(cm);
+        }   
 
         /// @brief Reads the states of the utility pins on startup to see what to do. If they are off, then it fires an event.
         void Initalize()
@@ -104,79 +148,44 @@ namespace States
             auto utilityOn = new UtilityOn(this);        
             auto utilityOff = new UtilityOff(this);
 
-            this->_stateMap.insert(StatePair(Event::Initalize, new Initial(this)));
-            
-            this->_stateMap.insert(StatePair(Event::Utility_On, utilityOn));
-            this->_stateMap.insert(StatePair(Event::Utility_On_Wait, utilityOn));
-            this->_stateMap.insert(StatePair(Event::Utility_On_Wait_Done, utilityOn));
-            
+            this->_stateMap.insert(StatePair(Event::Initalize, new Initial(this)));            
+            this->_stateMap.insert(StatePair(Event::Utility_On, utilityOn));            
             this->_stateMap.insert(StatePair(Event::Utility_Off, utilityOff));
-            this->_stateMap.insert(StatePair(Event::Utility_Off_Wait, utilityOff));
-            this->_stateMap.insert(StatePair(Event::Utility_Off_Wait_Done, utilityOff));
             
             //This is the initalize
             this->SetDevices();
-            //this->StateChange(Event::Initalize);                  
+            //this->StateChange(Event::Initalize);        
+
+            this->_serial->Println(IO::string_format("Initalize %i address:%i\n", this->_pins.size(), &this->_pins));                  
         }
 
         void SetDevices()
         {
+            this->_currentEvent = Event::Initalize;
             this->_serial->Println("Starting to set devices");
 
-            Pin* generatorL1 = this->FindByRole(PinRole::GeneratorOnL1);
-            Pin* generatorL2 = this->FindByRole(PinRole::GeneratorOnL2);
-
-            if(generatorL1 == nullptr)
-                throw invalid_argument ("No pin roles found for the generator");
-            
-            this->_generator = new Devices::PowerDevice(generatorL1, generatorL2, this);            
-
-            Pin* utilityL1 = this->FindByRole(PinRole::UtilityOnL1);
-            Pin* utilityL2 = this->FindByRole(PinRole::UtilityOnL2);
-
-            if(utilityL1 == nullptr)
-                throw invalid_argument ("No pin roles found for the generator");
-            
-            this->_utility = new Devices::PowerDevice(utilityL1, utilityL2, this); 
-
             //Performs the inital read of the state
-            this->_utility->SetPinState(this->_board);
-            this->_generator->SetPinState(this->_board);                      
+            this->_utility->SetPinState();
+            this->_generator->SetPinState();
+
+            this->AddDevicePins(this->_utility);
+            this->AddDevicePins(this->_generator);
+            this->AddDevicePins(this->_transferSwitch);
+
+            this->_serial->Println(IO::string_format("SetDevices %i address:%i\n", this->_pins.size(), &this->_pins));
 
             //It's not on, so trigger the utility off state
             if(!this->_utility->IsOn())
-                this->StateChange(Event::Utility_Off, true);
+                this->StateChange(Event::Utility_Off);
 
             this->_serial->Println("Done setting devices");
-        }
-        
-        void StateChange(Event e, bool doAction)
-        {
-            this->_serial->Println(IO::string_format("State changed '%s' (%i)\n", IEvent::ToName(e).c_str(), e));
-            
-            if(this->_stateMap[e] != nullptr)
-            {            
-                this->_currentState = this->_stateMap[e];            
-
-                this->_serial->Println(IO::string_format("Current State GetName(): '%s'", this->_currentState->GetName().c_str()));
-                
-                if(doAction)
-                    this->_currentState->DoAction();
-            }
-        }   
-
-        /// @brief Adds a new pin to the list
-        /// @param pin 
-        void AddPin(Pin pin)
-        {
-            this->_serial->Println(IO::string_format("Adding pin %s Role:%i\n", pin.name.c_str(), pin.role));
-            this->_pins.push_back(pin);
-        }
+        } 
 
         /// @brief Gets the total number of pins
         /// @return 
         int PinCount()
         {
+            this->_serial->Println(IO::string_format("PinCount %i address:%i\n", this->_pins.size(), &this->_pins));            
             return this->_pins.size();
         }
 
@@ -200,12 +209,23 @@ namespace States
 
             while(true)
             {
-                //xQueueReceive(this->_pinQueueChange, &( changeMessage ), portMAX_DELAY);
-                this->_serial->Println(IO::string_format("BlockAndDequeue"));
+                this->_serial->Println(IO::string_format("WaitAndListen loop"));
                 changeMessage = this->_pinQueueChange->BlockAndDequeue();
                 
-                this->_serial->Println(IO::string_format("BlockAndDequeue un blocked"));
-                this->StateChange(changeMessage.event, true);                
+                this->_serial->Println(IO::string_format("Message found, starting to process......"));                
+                
+                this->_currentEvent = changeMessage.event;            
+
+                if(this->_stateMap[changeMessage.event] != nullptr)
+                {
+                    this->_currentState = this->_stateMap[changeMessage.event];            
+
+                    this->_serial->Println(IO::string_format("Current State GetName(): '%s'", this->_currentState->GetName().c_str()));
+                    
+                    this->_currentState->DoAction();
+                }
+                else
+                    this->_serial->Println(IO::string_format("No state map for '%s' (%i) this is probably ok\n", IEvent::ToName(changeMessage.event).c_str(), changeMessage));                        
             }
         }    
         
