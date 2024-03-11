@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "IO/Pin.cpp"
+
 using namespace std;
 
 namespace States
@@ -55,7 +56,7 @@ namespace States
                 "GeneratorStarting",
                 "GeneratorOn",
                 "GeneratorWarmUp",
-                "GeneratorWarmUpDone"
+                "GeneratorWarmUpDone",
                 "TransferToGenerator",
 
                 //Shut down phases
@@ -72,7 +73,8 @@ namespace States
                 "Idle",
                 "Disable"
             };
-            return _enumStrings[(int)e];
+            
+            return _enumStrings[e];
         }
     };
 }
