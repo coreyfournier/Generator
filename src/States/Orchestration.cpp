@@ -13,6 +13,7 @@
 #include "States/IState.h"
 #include "States/UtilityOn.cpp"
 #include "States/UtilityOff.cpp"
+#include "States/GeneratorStart.cpp"
 #include "States/Initial.cpp"
 #include "States/IContext.h"
 #include "IO/ISerial.h"
@@ -59,11 +60,11 @@ namespace States
                     this->_pins.push_back(allPins[i]);
                 }
             }
-   
-            this->_serial->Println(IO::string_format("PinCount %i address:%i\n", this->_pins.size(), &this->_pins));                   
         }
             
         public:
+        const int TimeToWaitForStart = 80000;
+
         /// @brief Constructor
         /// @param listner 
         /// @param board 
@@ -101,12 +102,19 @@ namespace States
             return this->_generator;
         }
 
-        // /// @brief Gets the current event state
-        // /// @return 
-        // Event GetState()
-        // {
-        //     return this->_currentEventState;
-        // }
+        /// @brief Gets the current event state
+        /// @return 
+        Event GetState()
+        {
+            return this->_currentEvent;
+        }
+
+        /// @brief Gets the current event state name
+        /// @return 
+        string GetStateName()
+        {
+            return IEvent::ToName(this->_currentEvent);
+        }
 
         /// @brief Causes a wait
         /// @param milliseconds 
@@ -147,16 +155,16 @@ namespace States
         {   
             auto utilityOn = new UtilityOn(this);        
             auto utilityOff = new UtilityOff(this);
+            auto generatorStart = new GeneratorStart(this, Orchestration::TimeToWaitForStart);
 
             this->_stateMap.insert(StatePair(Event::Initalize, new Initial(this)));            
             this->_stateMap.insert(StatePair(Event::Utility_On, utilityOn));            
             this->_stateMap.insert(StatePair(Event::Utility_Off, utilityOff));
+            this->_stateMap.insert(StatePair(Event::Generator_Start, generatorStart));
             
             //This is the initalize
             this->SetDevices();
             //this->StateChange(Event::Initalize);        
-
-            this->_serial->Println(IO::string_format("Initalize %i address:%i\n", this->_pins.size(), &this->_pins));                  
         }
 
         void SetDevices()
@@ -172,8 +180,6 @@ namespace States
             this->AddDevicePins(this->_generator);
             this->AddDevicePins(this->_transferSwitch);
 
-            this->_serial->Println(IO::string_format("SetDevices %i address:%i\n", this->_pins.size(), &this->_pins));
-
             //It's not on, so trigger the utility off state
             if(!this->_utility->IsOn())
                 this->StateChange(Event::Utility_Off);
@@ -184,8 +190,7 @@ namespace States
         /// @brief Gets the total number of pins
         /// @return 
         int PinCount()
-        {
-            this->_serial->Println(IO::string_format("PinCount %i address:%i\n", this->_pins.size(), &this->_pins));            
+        {            
             return this->_pins.size();
         }
 
@@ -225,7 +230,13 @@ namespace States
                     this->_currentState->DoAction();
                 }
                 else
-                    this->_serial->Println(IO::string_format("No state map for '%s' (%i) this is probably ok\n", IEvent::ToName(changeMessage.event).c_str(), changeMessage));                        
+                {
+                    Event e = changeMessage.event;
+                    this->_serial->Println(IO::string_format(
+                        "No state map for '%s' (%i) this is probably ok\n", 
+                        IEvent::ToName(e).c_str(), 
+                        e));                        
+                }
             }
         }    
         

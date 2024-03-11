@@ -6,7 +6,7 @@ using namespace std;
 namespace States
 {
     /// @brief All the event phases. The order matters here as they are step by step progression, it also matches the ToName function
-    enum Event { 
+    enum Event:int { 
         Initalize = 0,
         //Startup phases     
         Utility_Off = 1,
@@ -44,11 +44,13 @@ namespace States
         static string ToName(Event e)
         {
             static string _enumStrings[20] = { 
+
                 "Initalize",
                 //Startup phases
                 "Utility Off",
                 "UtilityOffWait",
-                "UtilityOffWaitDone",            
+                "UtilityOffWaitDone",   
+                         
                 "GeneratorStart",
                 "GeneratorStarting",
                 "GeneratorOn",

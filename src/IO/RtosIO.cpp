@@ -1,6 +1,6 @@
 #ifndef PIO_UNIT_TESTING
 #pragma once
-#include <ArduinoJson.h>
+#include <Arduino.h>
 #include "Pin.cpp"
 #include "IO/IBoardIo.h"
 
@@ -18,6 +18,7 @@ namespace IO
 
         void DigitalWrite(Pin& pin, bool value)
         {
+            Serial.printf("Writing pin %i value=%i\n", pin.gpio, value);
             pin.state = value;
             digitalWrite(pin.gpio, value? HIGH : LOW);
         }

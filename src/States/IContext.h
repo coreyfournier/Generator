@@ -3,6 +3,7 @@
 #include "IO/ISerial.h"
 #include "Devices/PowerDevice.cpp"
 #include "States/IEvent.cpp"
+#include "Devices/StartableDevice.cpp"
 
 using namespace IO;
 
@@ -33,7 +34,7 @@ namespace States
         
         /// @brief Gets the generator control. nullptr if not found or set
         /// @return 
-        virtual Devices::PowerDevice* GetGenerator() = 0;
+        virtual Devices::StartableDevice* GetGenerator() = 0;
 
         /// @brief Causes a wait
         /// @param milliseconds 
