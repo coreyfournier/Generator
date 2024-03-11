@@ -216,10 +216,10 @@ namespace States
             {
                 this->_serial->Println(IO::string_format("WaitAndListen loop"));
                 changeMessage = this->_pinQueueChange->BlockAndDequeue();
+                this->_currentEvent = changeMessage.event;
                 
-                this->_serial->Println(IO::string_format("Message found, starting to process......"));                
-                
-                this->_currentEvent = changeMessage.event;            
+                this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));                                
+                            
 
                 if(this->_stateMap[changeMessage.event] != nullptr)
                 {
