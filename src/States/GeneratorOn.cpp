@@ -1,26 +1,44 @@
-#include "IState.h"
-#include "Orchestration.cpp"
-#include "Devices/PowerDevice.cpp"
-#include "Devices/StartableDevice.cpp"
-#include "Devices/TransferSwitch.cpp"
+#pragma once
+#include "States/IState.h"
+#include "States/IContext.h"
+#include "config.h"
+
 using namespace std;
 
 namespace States
 {
-    class GeneratorOn:IState
+    class GeneratorOn: public IState
     {
         private:
-        Orchestration _context;
+        IContext* _context;
+        int _warmUpTime;
 
         public:
-        GeneratorOn(Orchestration& context) : _context(context)
+        GeneratorOn(IContext* context, const int warmUpTime = DefaultGeneratorWarmUpTime) : _context(context), _warmUpTime(warmUpTime)
         {
 
         }
 
         void DoAction()
         {
-            //this->_context.
+            auto* utility = this->_context->GetUtility();
+            auto* generator = this->_context->GetGenerator();
+
+            if(utility->IsOn())
+            {
+                this->_context->StateChange(Event::Utility_On);
+            }
+            else if(generator->IsOn())
+            {
+                this->_context->StateChange(Event::Generator_Warm_Up);
+                this->_context->Delay(this->_warmUpTime);
+                this->_context->StateChange(Event::Generator_Warm_Up_Done);
+                this->_context->StateChange(Event::Transfer_To_Generator);
+            }
+            else
+            {
+                this->_context->StateChange(Event::Generator_Start);
+            }
         }
 
         void WaitDone()
@@ -30,7 +48,7 @@ namespace States
 
         string GetName()
         {
-            return "GeneratorOn";
+            return "Generator On";
         }
     };
 }

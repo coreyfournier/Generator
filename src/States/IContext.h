@@ -4,6 +4,8 @@
 #include "Devices/PowerDevice.cpp"
 #include "States/IEvent.cpp"
 #include "Devices/StartableDevice.cpp"
+#include "Devices/TransferSwitch.cpp"
+
 
 using namespace IO;
 
@@ -35,6 +37,10 @@ namespace States
         /// @brief Gets the generator control. nullptr if not found or set
         /// @return 
         virtual Devices::StartableDevice* GetGenerator() = 0;
+
+        /// @brief Gets the transfer switch control
+        /// @return 
+        virtual Devices::TransferSwitch* GetTransferSwitch() = 0;
 
         /// @brief Causes a wait
         /// @param milliseconds 

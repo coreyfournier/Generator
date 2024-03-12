@@ -1,6 +1,7 @@
 #pragma once
 #include "States/IState.h"
 #include "States/IContext.h"
+#include "config.h"
 
 using namespace std;
 
@@ -13,12 +14,18 @@ namespace States
         int _timeToWaitForStart;
         int _maxTimesToStart;
         int _totalStartTries = 0;
+        
+        int _delayBetweenStarts;
 
         public:
-        GeneratorStart(IContext* context, const int timeToWaitForStart, const int maxTimesToStart = 3) : 
+        GeneratorStart(IContext* context, 
+            const int timeToWaitForStart = DefaultGeneratorTimeToWaitForStart, 
+            const int maxTimesToStart = DefaultGeneratorTimesToStart,             
+            const int delayBetweenStarts = DefaultDelayBetweenGeneratorStarts) : 
             _context(context), 
             _timeToWaitForStart(timeToWaitForStart),
-            _maxTimesToStart(maxTimesToStart)
+            _maxTimesToStart(maxTimesToStart),            
+            _delayBetweenStarts(delayBetweenStarts)
         {
             
         }
@@ -46,16 +53,19 @@ namespace States
 
                         if(generator->IsOn())    
                         {
-                            this->_context->StateChange(Event::Generator_Warm_Up);
                             //Reset it was sucessful
                             this->_totalStartTries = 0;
+
+                            this->_context->StateChange(Event::Generator_On);                          
+                            
+                            //Make sure we exit
                             return;
                         }
                         else //Failed to start. It will try again
                         {
                             this->_context->StateChange(Event::Start_Failure);
                             //Delay between starts
-                            this->_context->Delay(2000);
+                            this->_context->Delay(this->_delayBetweenStarts);
                             this->_totalStartTries++;
                         }
 

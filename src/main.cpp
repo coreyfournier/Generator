@@ -53,6 +53,8 @@ Pin transfer = Pin(TransferGPIO, false, "Transfer", PinRole::Transfer);
 Pin genStart = Pin(StartGPIO, false, "Start Generator", PinRole::Start);
 Pin genStop = Pin(StopGPIO, false, "Stop Generator", PinRole::Stop);
 IO::RtosIO board = IO::RtosIO();
+IO::RtosQueue queue = IO::RtosQueue();
+IO::RtosSerial s = IO::RtosSerial();
 
 Devices::StartableDevice generator = Devices::StartableDevice(
   &generatorL1OnSense,
@@ -62,7 +64,7 @@ Devices::StartableDevice generator = Devices::StartableDevice(
   &board
 );
 Devices::PowerDevice utility = Devices::PowerDevice(&L1OnSense, &L2OnSense, &board);
-Devices::TransferSwitch transferSwitch = Devices::TransferSwitch(&transfer, &board);
+Devices::TransferSwitch transferSwitch = Devices::TransferSwitch(&transfer, &board, &s);
 
 const gpio_int_type_t int_type = GPIO_INTR_ANYEDGE;
 
@@ -77,8 +79,6 @@ class EventStub : public IEvent
 
 EventStub es = EventStub();
 
-IO::RtosQueue queue = IO::RtosQueue();
-IO::RtosSerial s = IO::RtosSerial();
 Orchestration* view = new Orchestration( 
   &es, 
   &utility,

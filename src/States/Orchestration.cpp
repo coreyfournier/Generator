@@ -14,6 +14,8 @@
 #include "States/UtilityOn.cpp"
 #include "States/UtilityOff.cpp"
 #include "States/GeneratorStart.cpp"
+#include "States/GeneratorOn.cpp"
+#include "States/TransferToGenerator.cpp"
 #include "States/Initial.cpp"
 #include "States/IContext.h"
 #include "IO/ISerial.h"
@@ -63,7 +65,6 @@ namespace States
         }
             
         public:
-        const int TimeToWaitForStart = 80000;
 
         /// @brief Constructor
         /// @param listner 
@@ -100,6 +101,11 @@ namespace States
         Devices::StartableDevice* GetGenerator()
         {
             return this->_generator;
+        }
+
+        Devices::TransferSwitch* GetTransferSwitch()
+        {
+            return this->_transferSwitch;
         }
 
         /// @brief Gets the current event state
@@ -155,12 +161,16 @@ namespace States
         {   
             auto utilityOn = new UtilityOn(this);        
             auto utilityOff = new UtilityOff(this);
-            auto generatorStart = new GeneratorStart(this, Orchestration::TimeToWaitForStart);
+            auto generatorStart = new GeneratorStart(this);
+            auto generatorOn = new GeneratorOn(this);
+            auto transferToGenerator = new TransferToGenerator(this);
 
             this->_stateMap.insert(StatePair(Event::Initalize, new Initial(this)));            
             this->_stateMap.insert(StatePair(Event::Utility_On, utilityOn));            
             this->_stateMap.insert(StatePair(Event::Utility_Off, utilityOff));
             this->_stateMap.insert(StatePair(Event::Generator_Start, generatorStart));
+            this->_stateMap.insert(StatePair(Event::Generator_On, generatorOn));
+            this->_stateMap.insert(StatePair(Event::Transfer_To_Generator, transferToGenerator));
             
             //This is the initalize
             this->SetDevices();
