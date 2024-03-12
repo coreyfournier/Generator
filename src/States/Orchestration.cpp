@@ -243,7 +243,7 @@ namespace States
                 {
                     Event e = changeMessage.event;
                     this->_serial->Println(IO::string_format(
-                        "No state map for '%s' (%i) this is probably ok\n", 
+                        "No state map for '%s' (%i) this is probably a substate for the current state\n", 
                         IEvent::ToName(e).c_str(), 
                         e));                        
                 }
