@@ -33,8 +33,8 @@ namespace States
             {
                 if(generator->IsOn())
                 {
-                    //No other state changes, this is the last state
                     transferSwitch->Toggle(true);
+                    this->_context->StateChange(Event::Idle);
                 }
                 else // It's not on for some reason, so switch to that state
                     this->_context->StateChange(Event::Generator_On);                
