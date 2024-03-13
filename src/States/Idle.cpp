@@ -3,17 +3,21 @@
 #include "States/IContext.h"
 #include "config.h"
 
+
+using namespace std;
+
 namespace States
 {
-    class UtilityOn: public IState
+    class Idle: public IState
     {
         private:
         IContext* _context;
 
         public:
-        UtilityOn(IContext* context) : _context(context)
+        Idle(IContext* context) : 
+            _context(context)
         {
-
+            
         }
 
         void DoAction()
@@ -21,12 +25,12 @@ namespace States
             auto* utility = this->_context->GetUtility();
             auto* generator = this->_context->GetGenerator();
             auto* transferSwitch = this->_context->GetTransferSwitch();
+
         }
-      
 
         string GetName()
         {
-            return "Utility On";
+            return "Idle";
         }
     };
 }

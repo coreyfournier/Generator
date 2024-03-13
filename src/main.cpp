@@ -130,8 +130,8 @@ void setup() {
   digitalWrite(StartGPIO, LOW);
   pinMode(StopGPIO, OUTPUT);
   digitalWrite(StopGPIO, LOW);  
-  pinMode(L1OnSense.gpio, INPUT);
-  pinMode(L2OnSense.gpio, INPUT);
+  pinMode(L1OnSense.gpio, INPUT_PULLDOWN);
+  pinMode(L2OnSense.gpio, INPUT_PULLDOWN);
   pinMode(generatorL1OnSense.gpio, INPUT);
 
    /* Input pins */
@@ -185,8 +185,6 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(generatorL1OnSense.gpio), generatorSenseChange, CHANGE);
   attachInterrupt(digitalPinToInterrupt(L1OnSense.gpio), L1SenseChange, CHANGE);
   attachInterrupt(digitalPinToInterrupt(L2OnSense.gpio), L2SenseChange, CHANGE);  
-
-  view->PinCount();
 }
 
 void generatorSenseChange()

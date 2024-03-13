@@ -5,13 +5,13 @@
 
 namespace States
 {
-    class UtilityOn: public IState
+    class GeneratorStop: public IState
     {
         private:
         IContext* _context;
 
         public:
-        UtilityOn(IContext* context) : _context(context)
+        GeneratorStop(IContext* context) : _context(context)
         {
 
         }
@@ -26,7 +26,7 @@ namespace States
 
         string GetName()
         {
-            return "Utility On";
+            return "Generator stop";
         }
     };
 }

@@ -134,13 +134,11 @@ namespace States
         /// @param requiresRead 
         void PinChanged(Pin& pin, bool requiresRead)
         {
-            /**
-             * !!!!!!!!!!!!!!This will need some kind of event to trigger a state when the generator is at idle!!!!!!!!!!!!!
-             */
-            if(requiresRead)
-                this->_board->DigitalRead(pin);
-
-            this->_serial->Println(IO::string_format("ChangeListner %s (%i) State=%i\n", pin.name.c_str(), pin.gpio, pin.state));            
+            ChangeMessage cm;
+            cm.pin = &pin;            
+            cm.event = requiresRead? Event::PinChange_Read_Value : Event::PinChange_No_Read_Value;
+            
+            this->_pinQueueChange->QueueMessage(cm);                    
         }     
 
         void StateChange(ChangeMessage& cm)
@@ -227,31 +225,46 @@ namespace States
                 this->_serial->Println(IO::string_format("WaitAndListen loop"));
                 changeMessage = this->_pinQueueChange->BlockAndDequeue();
                 this->_currentEvent = changeMessage.event;
-                
-                this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));                                
-                            
 
-                if(this->_stateMap[changeMessage.event] != nullptr)
-                {
-                    this->_currentState = this->_stateMap[changeMessage.event];            
+                if(changeMessage.event == Event::PinChange_No_Read_Value || changeMessage.event == Event::PinChange_Read_Value)
+                {                
+                    if(changeMessage.event == Event::PinChange_Read_Value)
+                        this->_board->DigitalRead(*changeMessage.pin);
 
-                    this->_serial->Println(IO::string_format("Current State GetName(): '%s'", this->_currentState->GetName().c_str()));
-                    
-                    this->_currentState->DoAction();
+                    this->_serial->Println(IO::string_format(
+                        "ChangeListner %s (%i) State=%i\n", 
+                        changeMessage.pin->name.c_str(), 
+                        changeMessage.pin->gpio, 
+                        changeMessage.pin->state));
                 }
                 else
-                {
-                    Event e = changeMessage.event;
-                    this->_serial->Println(IO::string_format(
-                        "No state map for '%s' (%i) this is probably a substate for the current state\n", 
-                        IEvent::ToName(e).c_str(), 
-                        e));                        
+                {                    
+                    this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));                                
+                                
+
+                    if(this->_stateMap[changeMessage.event] != nullptr)
+                    {
+                        this->_currentState = this->_stateMap[changeMessage.event];            
+
+                        this->_serial->Println(IO::string_format("Current State GetName(): '%s'", this->_currentState->GetName().c_str()));
+                        
+                        this->_currentState->DoAction();
+                    }
+                    else
+                    {
+                        Event e = changeMessage.event;
+                        this->_serial->Println(IO::string_format(
+                            "No state map for '%s' (%i) this is probably a substate for the current state\n", 
+                            IEvent::ToName(e).c_str(), 
+                            e));                        
+                    }
                 }
             }
         }    
         
         void DigitalWrite(Pin& pin, bool value)
         {
+            this->_serial->Println(IO::string_format("DigitalWrite pin %i", pin.gpio));
             if(value != pin.state)
             {
                 this->_board->DigitalWrite(pin, value);

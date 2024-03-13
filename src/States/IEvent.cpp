@@ -32,7 +32,9 @@ namespace States
         //Any other events
         Start_Failure = 17,
         Idle = 18,
-        Disable = 19
+        Disable = 19,
+        PinChange_Read_Value = 20,
+        PinChange_No_Read_Value = 21
     };
 
     class IEvent
@@ -44,7 +46,7 @@ namespace States
 
         static string ToName(Event e)
         {
-            static string _enumStrings[20] = { 
+            static string _enumStrings[22] = { 
 
                 "Initalize",
                 //Startup phases
@@ -71,7 +73,9 @@ namespace States
                 //Error states
                 "StartFailure",
                 "Idle",
-                "Disable"
+                "Disable",
+                "PinChangeRead",
+                "PinChangeNoRead"
             };
             
             return _enumStrings[e];
