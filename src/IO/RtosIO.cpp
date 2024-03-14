@@ -12,6 +12,11 @@ namespace IO
         public:
         bool DigitalRead(Pin& pin)
         {
+            return digitalRead(pin.gpio) == HIGH;
+        }
+
+        bool DigitalReadAndSet(Pin& pin)
+        {
             pin.state = digitalRead(pin.gpio) == HIGH;
             return pin.state;
         }
@@ -31,6 +36,11 @@ namespace IO
         void Delay(int milliseconds)
         {
             delay(milliseconds);
+        }
+
+        uint32_t TicksOfTime()
+        {
+            return xTaskGetTickCountFromISR();
         }
     };
 }

@@ -43,6 +43,7 @@ namespace States
         Event _currentEvent;
         std::map<Event, IState*> _stateMap;
         typedef std::pair<Event, IState*> StatePair;
+        typedef std::pair<uint32_t, int> GpioTimePair;
         IO::ISerial* _serial;
         IO::IBoardIO* _board;
 
@@ -129,14 +130,15 @@ namespace States
             this->_board->Delay(milliseconds);
         }
 
-        /// @brief Handles the event when the pin changes. Updates the pin, and will fire an event to wake up the system if necessary
+        /// @brief Handles the event when the pin changes.
         /// @param pin 
-        /// @param requiresRead 
+        /// @param requiresRead set to true when the pin value needs to be read and set from the board. False if the system is setting the value.
         void PinChanged(Pin& pin, bool requiresRead)
         {
             ChangeMessage cm;
             cm.pin = &pin;            
             cm.event = requiresRead? Event::PinChange_Read_Value : Event::PinChange_No_Read_Value;
+            cm.time = this->_board->TicksOfTime();
             
             this->_pinQueueChange->QueueMessage(cm);                    
         }     
@@ -150,7 +152,7 @@ namespace States
 
         void StateChange(Event e)
         {
-            ChangeMessage cm = ChangeMessage(e, nullptr);
+            ChangeMessage cm = ChangeMessage(e, nullptr, this->_board->TicksOfTime());
             this->StateChange(cm);
         }   
 
@@ -213,6 +215,7 @@ namespace States
         /// @brief Waits for pin change events and sets the pin values 
         void WaitAndListen()
         {
+            std::map<int, uint32_t> gpioLastChanged;
             this->_serial->Println(IO::string_format("Starting Initalize\n"));
             this->Initalize();
             
@@ -226,16 +229,46 @@ namespace States
                 changeMessage = this->_pinQueueChange->BlockAndDequeue();
                 this->_currentEvent = changeMessage.event;
 
-                if(changeMessage.event == Event::PinChange_No_Read_Value || changeMessage.event == Event::PinChange_Read_Value)
-                {                
-                    if(changeMessage.event == Event::PinChange_Read_Value)
-                        this->_board->DigitalRead(*changeMessage.pin);
 
-                    this->_serial->Println(IO::string_format(
-                        "ChangeListner %s (%i) State=%i\n", 
-                        changeMessage.pin->name.c_str(), 
-                        changeMessage.pin->gpio, 
-                        changeMessage.pin->state));
+                if(changeMessage.event == Event::PinChange_No_Read_Value || changeMessage.event == Event::PinChange_Read_Value)
+                {   
+                    if(changeMessage.pin != nullptr)
+                    {
+                        if (gpioLastChanged.find(changeMessage.pin->gpio) == gpioLastChanged.end()) {
+                            //this->_board->TicksOfTime()
+                            //When initalizing it make sure it will be at least the minimum
+                            gpioLastChanged.insert(GpioTimePair(changeMessage.pin->gpio, MinTimeAllowedBetweenMessages));
+                        } 
+                        auto lastChange = gpioLastChanged.find(changeMessage.pin->gpio);
+                        auto timeDiff = this->_board->TicksOfTime() - lastChange->second;
+                        
+                        //It's with in range update the last time.
+                        if(timeDiff > MinTimeAllowedBetweenMessages) 
+                        {
+                            lastChange->second = this->_board->TicksOfTime();
+
+                            bool pinState = changeMessage.pin->state; 
+                            bool notifyChange = true;
+
+                            if(changeMessage.event == Event::PinChange_Read_Value)
+                            {
+                                pinState = this->_board->DigitalRead(*changeMessage.pin);
+                                //Only fire a message if it actually changed.
+                                notifyChange = (changeMessage.pin->state != pinState);
+                            }                            
+                                                  
+                            this->_serial->Println(IO::string_format(
+                                "ChangeListner %s (%i) State=%i Timediff=%i\n", 
+                                changeMessage.pin->name.c_str(), 
+                                changeMessage.pin->gpio, 
+                                changeMessage.pin->state,
+                                timeDiff));                            
+                        }
+                        else
+                        {
+                            this->_serial->Println(IO::string_format("Event %s was too close together. Exiting", IEvent::ToName(this->_currentEvent).c_str()));     
+                        }
+                    }                   
                 }
                 else
                 {                    

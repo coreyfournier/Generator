@@ -1,6 +1,9 @@
 #pragma once
 #include "Pin.cpp"
 #include "IBoardIo.h"
+#include <iostream>
+#include <chrono>
+#include <ctime>  
 
 namespace IO
 {
@@ -18,6 +21,11 @@ namespace IO
             return false;
         }
 
+        bool DigitalReadAndSet(Pin& pin)
+        {
+            return true;
+        }
+
         void TaskDelay(int milliseconds)
         {
 
@@ -26,6 +34,11 @@ namespace IO
         void Delay(int milliseconds)
         {
 
+        }
+
+        uint32_t TicksOfTime()
+        {
+            return 500;
         }
     };
 }

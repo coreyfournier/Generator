@@ -8,3 +8,6 @@ const int DefaultGeneratorTimesToStart = 3;
 const int DefaultDelayBetweenGeneratorStarts = 2000;
 /// @brief Amount of time to wait to see if the generator started
 const int DefaultGeneratorTimeToWaitForStart = 5000;
+
+/// @brief How many milliseconds (ticks) required between messages. This is to prevent debounce.
+const uint32_t MinTimeAllowedBetweenMessages = 500;

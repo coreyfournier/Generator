@@ -12,14 +12,20 @@ namespace IO
         /// @param value 
         virtual void DigitalWrite(Pin& pin, bool value) = 0;
 
-        /// @brief Reads the pin. Updates the state of the pin too.
+        /// @brief Reads the pin.
         /// @param pin 
         /// @return 
         virtual bool DigitalRead(Pin& pin) = 0;
+
+        /// @brief Reads the pin. Updates the state of the pin too.
+        /// @param pin 
+        /// @return
+        virtual bool DigitalReadAndSet(Pin& pin) = 0;
 
         virtual void TaskDelay(int milliseconds) = 0;
 
         virtual void Delay(int milliseconds) = 0;
 
+        virtual uint32_t TicksOfTime() = 0;        
     };
 }
