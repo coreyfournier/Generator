@@ -32,9 +32,6 @@ namespace Devices
             this->_board->DigitalWrite(*this->_start, true);
             this->_board->Delay(1000);
             this->_board->DigitalWrite(*this->_start, false);
-
-            //Temporary fake that it is now running
-            this->_L1->state = true;
         }
 
         void Stop()

@@ -45,10 +45,10 @@ namespace Devices
         void SetPinState()
         {
             if(this->_L1 != nullptr)
-                this->_board->DigitalRead(*this->_L1);            
+                this->_board->DigitalReadAndSet(*this->_L1);            
 
             if(this->_L2 != nullptr)
-                this->_board->DigitalRead(*this->_L2);            
+                this->_board->DigitalReadAndSet(*this->_L2);            
         }  
 
         std::vector<IO::Pin> GetPins()

@@ -258,11 +258,24 @@ namespace States
                             }                            
                                                   
                             this->_serial->Println(IO::string_format(
-                                "ChangeListner %s (%i) State=%i Timediff=%i\n", 
+                                "ChangeListner %s (%i) State=%i Timediff=%i Notify=%i\n", 
                                 changeMessage.pin->name.c_str(), 
                                 changeMessage.pin->gpio, 
                                 changeMessage.pin->state,
-                                timeDiff));                            
+                                timeDiff,
+                                notifyChange));                            
+                            /*This needs a big refactor*/
+                            if(notifyChange)
+                            {
+                                //Update the pin because we now know it changed.
+                                changeMessage.pin->state = pinState;
+
+                                if(changeMessage.pin->role == PinRole::UtilityOnL1 || changeMessage.pin->role == PinRole::UtilityOnL2)
+                                    if(changeMessage.pin->state)
+                                        this->StateChange(Utility_On);
+                                    else
+                                        this->StateChange(Utility_Off);
+                            }
                         }
                         else
                         {

@@ -1,6 +1,7 @@
 #pragma once
 #include "States/IState.h"
 #include "States/IContext.h"
+#include "config.h"
 using namespace std;
 
 namespace States
@@ -21,7 +22,7 @@ namespace States
             this->_context->GetSerialIO()->Println("Utility off do action");
 
             this->_context->StateChange(Event::Utility_Off_Wait);
-            this->_context->Delay(2000);
+            this->_context->Delay(DefaultUtilityOffWaitTime);
             
             this->_context->StateChange(Event::Utility_Off_Wait_Done);
             

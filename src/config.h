@@ -11,3 +11,6 @@ const int DefaultGeneratorTimeToWaitForStart = 5000;
 
 /// @brief How many milliseconds (ticks) required between messages. This is to prevent debounce.
 const uint32_t MinTimeAllowedBetweenMessages = 500;
+
+/// @brief Time in milliseconds to wait to confirm the utility is still off
+const int DefaultUtilityOffWaitTime = 2000;
