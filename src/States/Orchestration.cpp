@@ -18,7 +18,7 @@
 #include "States/GeneratorStop.cpp"
 #include "States/TransferToGenerator.cpp"
 #include "States/TransferToUtility.cpp"
-#include "States/Initial.cpp"
+#include "States/Idle.cpp"
 #include "States/IContext.h"
 #include "IO/ISerial.h"
 #include "IO/IQueue.h"
@@ -161,13 +161,14 @@ namespace States
         /// @brief Reads the states of the utility pins on startup to see what to do. If they are off, then it fires an event.
         void Initalize()
         {   
+            this->_currentEvent = Event::Initalize;
+
             auto utilityOn = new UtilityOn(this);        
             auto utilityOff = new UtilityOff(this);
             auto generatorStart = new GeneratorStart(this);
             auto generatorOn = new GeneratorOn(this);
             auto transferToGenerator = new TransferToGenerator(this);
 
-            this->_stateMap.insert(StatePair(Event::Initalize, new Initial(this)));            
             this->_stateMap.insert(StatePair(Event::Utility_On, utilityOn));            
             this->_stateMap.insert(StatePair(Event::Utility_Off, utilityOff));
             this->_stateMap.insert(StatePair(Event::Generator_Start, generatorStart));
@@ -175,15 +176,15 @@ namespace States
             this->_stateMap.insert(StatePair(Event::Generator_On, generatorOn));
             this->_stateMap.insert(StatePair(Event::Transfer_To_Generator, transferToGenerator));
             this->_stateMap.insert(StatePair(Event::Transfer_To_Utility, new TransferToUtility(this)));
+            this->_stateMap.insert(StatePair(Event::Idle, new States::Idle(this)));
             
             //This is the initalize
             this->SetDevices();
-            //this->StateChange(Event::Initalize);        
+            this->StateChange(Event::Idle);        
         }
 
         void SetDevices()
-        {
-            this->_currentEvent = Event::Initalize;
+        {            
             this->_serial->Println("Starting to set devices");
 
             //Performs the inital read of the state
@@ -229,10 +230,9 @@ namespace States
 
             while(true)
             {
-                this->_serial->Println(IO::string_format("WaitAndListen loop"));
+                //this->_serial->Println(IO::string_format("WaitAndListen loop"));
                 changeMessage = this->_pinQueueChange->BlockAndDequeue();
                 this->_currentEvent = changeMessage.event;
-
 
                 if(changeMessage.event == Event::PinChange_No_Read_Value || changeMessage.event == Event::PinChange_Read_Value)
                 {   
@@ -259,38 +259,37 @@ namespace States
                                 pinState = this->_board->DigitalRead(*changeMessage.pin);
                                 //Only fire a message if it actually changed.
                                 notifyChange = (changeMessage.pin->state != pinState);
+                                changeMessage.pin->state = pinState;
                             }                            
                                                   
                             this->_serial->Println(IO::string_format(
-                                "ChangeListner %s (%i) State=%i Timediff=%i Notify=%i\n", 
+                                "ChangeListner %s (%i) State=%i Timediff=%i Notify=%i CurrentEvent=%s\n", 
                                 changeMessage.pin->name.c_str(), 
                                 changeMessage.pin->gpio, 
                                 changeMessage.pin->state,
                                 timeDiff,
-                                notifyChange));                            
+                                notifyChange,
+                                IEvent::ToName(this->_currentEvent).c_str()));                            
                             /*This needs a big refactor*/
-                            if(notifyChange)
+                            //Only notify the change if it's idle. Each state knows to check for the generator and utility
+                            if(notifyChange && (this->_stateMap[Event::Idle] == this->_currentState))
                             {
-                                //Update the pin because we now know it changed.
-                                changeMessage.pin->state = pinState;
-
                                 if(changeMessage.pin->role == PinRole::UtilityOnL1 || changeMessage.pin->role == PinRole::UtilityOnL2)
                                     if(changeMessage.pin->state)
-                                        this->StateChange(Utility_On);
+                                        this->StateChange(Event::Utility_On);
                                     else
-                                        this->StateChange(Utility_Off);
+                                        this->StateChange(Event::Utility_Off);
                             }
                         }
                         else
                         {
-                            this->_serial->Println(IO::string_format("Event %s was too close together. Exiting", IEvent::ToName(this->_currentEvent).c_str()));     
+                            //this->_serial->Println(IO::string_format("Event %s was too close together. Exiting", IEvent::ToName(this->_currentEvent).c_str()));     
                         }
                     }                   
                 }
-                else
+                else //Event and not a pin change
                 {                    
-                    this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));                                
-                                
+                    this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));                                                                
 
                     if(this->_stateMap[changeMessage.event] != nullptr)
                     {

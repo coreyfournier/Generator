@@ -17,7 +17,6 @@
 #include "IO/PowerState.h"
 #include "IO/Pin.cpp"
 #include "States/Orchestration.cpp"
-#include "States/Initial.cpp"
 #include "IO/RtosIO.cpp"
 #include "IO/RtosQueue.cpp"
 #include "IO/RtosSerial.cpp"

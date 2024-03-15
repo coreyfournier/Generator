@@ -7,7 +7,7 @@ using namespace std;
 namespace States
 {
     /// @brief All the event phases. The order matters here as they are step by step progression, it also matches the ToName function
-    enum Event:int { 
+    enum class Event:int { 
         Initalize = 0,
         //Startup phases     
         Utility_Off = 1,
@@ -82,7 +82,7 @@ namespace States
                 "PinChangeNoRead"
             };
             
-            return _enumStrings[e];
+            return _enumStrings[(int)e];
         }
     };
 }
