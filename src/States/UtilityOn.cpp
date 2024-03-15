@@ -21,8 +21,21 @@ namespace States
             auto* utility = this->_context->GetUtility();
             auto* generator = this->_context->GetGenerator();
             auto* transferSwitch = this->_context->GetTransferSwitch();
-        }
-      
+            if(utility->IsOn())
+            {
+                this->_context->StateChange(Event::Utility_On_Wait);
+                this->_context->Delay(DefaultDelayUtilityOnWaitTime);
+                this->_context->StateChange(Event::Utility_On_Wait_Done);
+                if(utility->IsOn())
+                {
+                    if(transferSwitch->IsOnGenerator())
+                        this->_context->StateChange(Event::Transfer_To_Utility);
+                    else if(generator->IsOn())
+                        this->_context->StateChange(Event::Generator_Stop);
+
+                }                
+            }
+        }      
 
         string GetName()
         {

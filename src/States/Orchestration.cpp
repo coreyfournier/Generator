@@ -15,7 +15,9 @@
 #include "States/UtilityOff.cpp"
 #include "States/GeneratorStart.cpp"
 #include "States/GeneratorOn.cpp"
+#include "States/GeneratorStop.cpp"
 #include "States/TransferToGenerator.cpp"
+#include "States/TransferToUtility.cpp"
 #include "States/Initial.cpp"
 #include "States/IContext.h"
 #include "IO/ISerial.h"
@@ -169,8 +171,10 @@ namespace States
             this->_stateMap.insert(StatePair(Event::Utility_On, utilityOn));            
             this->_stateMap.insert(StatePair(Event::Utility_Off, utilityOff));
             this->_stateMap.insert(StatePair(Event::Generator_Start, generatorStart));
+            this->_stateMap.insert(StatePair(Event::Generator_Stop, new GeneratorStop(this)));
             this->_stateMap.insert(StatePair(Event::Generator_On, generatorOn));
             this->_stateMap.insert(StatePair(Event::Transfer_To_Generator, transferToGenerator));
+            this->_stateMap.insert(StatePair(Event::Transfer_To_Utility, new TransferToUtility(this)));
             
             //This is the initalize
             this->SetDevices();

@@ -25,16 +25,18 @@ namespace States
         Utility_On_Wait = 11,
         Utility_On_Wait_Done = 12,
         Transfer_To_Utility = 13,
-        Generator_Cooling_Down = 14, 
-        Generatored_Stopping = 15,
-        Generator_Off = 16, 
+        Generator_Stop = 14,
+        Generator_Cooling_Down = 15,         
+        Generator_Stopping = 16,
+        Generator_Stop_Failed = 17,
+        Generator_Off = 18, 
 
         //Any other events
-        Start_Failure = 17,
-        Idle = 18,
-        Disable = 19,
-        PinChange_Read_Value = 20,
-        PinChange_No_Read_Value = 21
+        Start_Failure = 19,
+        Idle = 20,
+        Disable = 21,
+        PinChange_Read_Value = 22,
+        PinChange_No_Read_Value = 23
     };
 
     class IEvent
@@ -46,7 +48,7 @@ namespace States
 
         static string ToName(Event e)
         {
-            static string _enumStrings[22] = { 
+            static string _enumStrings[24] = { 
 
                 "Initalize",
                 //Startup phases
@@ -66,8 +68,10 @@ namespace States
                 "UtilityOnWait",
                 "UtilityOnWaitDone",
                 "TransferToUtility",
+                "GeneratorStop",
                 "GeneratorCoolingDown", 
-                "GeneratoredStopping",
+                "GeneratorStopping",
+                "GeneratorStopFailed",
                 "GeneratorOff",
 
                 //Error states

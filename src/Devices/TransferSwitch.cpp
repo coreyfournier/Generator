@@ -37,6 +37,13 @@ namespace Devices
             this->_pin->state = onOrOff;
         }
 
+        /// @brief Is it transfered to generator
+        /// @return 
+        bool IsOnGenerator()
+        {
+            return this->_pin->state;
+        }
+
         std::vector<IO::Pin> GetPins()
         {
             return _pins;
