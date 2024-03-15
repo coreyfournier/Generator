@@ -132,7 +132,7 @@ void setup() {
   digitalWrite(StopGPIO, LOW);  
   pinMode(L1OnSense.gpio, INPUT_PULLDOWN);
   pinMode(L2OnSense.gpio, INPUT_PULLDOWN);
-  pinMode(generatorL1OnSense.gpio, INPUT);
+  pinMode(generatorL1OnSense.gpio, INPUT_PULLDOWN);
 
    /* Input pins */
   gpio_int_type_t tt;
