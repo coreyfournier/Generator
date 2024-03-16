@@ -7,7 +7,8 @@
 
 namespace IO
 {
-    class SimpleQueue: public IQueue
+    template<typename T>
+    class SimpleQueue: public IQueue<T>
     {
         private:
         std::mutex              d_mutex;
@@ -16,7 +17,7 @@ namespace IO
 
         public:
 
-        void QueueMessage(States::ChangeMessage& cm)
+        void QueueMessage(T& cm)
         {
             //xQueueSendToBackFromISR(this->_pinQueueChange, (void *)&cm, NULL);
             // {
@@ -26,7 +27,7 @@ namespace IO
             // this->d_condition.notify_one();
         }
 
-        States::ChangeMessage BlockAndDequeue()
+        T BlockAndDequeue()
         {
             /*
             struct States::ChangeMessage changeMessage;
@@ -42,7 +43,7 @@ namespace IO
                 return !this->d_queue.empty(); 
             });
 
-            States::ChangeMessage rc(std::move(this->d_queue.back()));
+            T rc(std::move(this->d_queue.back()));
             this->d_queue.pop_back();
 
             return rc;

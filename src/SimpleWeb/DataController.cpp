@@ -101,7 +101,7 @@ namespace SimpleWeb
                 
                 Serial.printf("data...");
                 
-                doc["state"] = this->_view->GetStateName();
+                doc["state"] = this->_view->GetStateName();                
 
                 Serial.printf("pins=%i\n", this->_view->PinCount());
 

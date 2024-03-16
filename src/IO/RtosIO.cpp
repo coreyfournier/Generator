@@ -35,7 +35,10 @@ namespace IO
 
         void Delay(int milliseconds)
         {
-            delay(milliseconds);
+            //Yield then wait
+            taskYIELD();
+            //Everything should be running in a task anyway
+            vTaskDelay(milliseconds);
         }
 
         uint32_t TicksOfTime()

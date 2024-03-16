@@ -7,7 +7,8 @@
 
 namespace IO
 {
-    class RtosQueue: public IQueue
+    template<typename T>
+    class RtosQueue: public IQueue<T>
     {
         private:
         QueueHandle_t _pinQueueChange;
@@ -15,17 +16,17 @@ namespace IO
         public:
         RtosQueue()
         {
-            this->_pinQueueChange = xQueueCreate(10, sizeof(States::ChangeMessage)); 
+            this->_pinQueueChange = xQueueCreate(10, sizeof(T)); 
         }
 
-        void QueueMessage(States::ChangeMessage& cm)
+        void QueueMessage(T& cm)
         {
             xQueueSendToBackFromISR(this->_pinQueueChange, (void *)&cm, NULL);
         }
 
-        States::ChangeMessage BlockAndDequeue()
+        T BlockAndDequeue()
         {
-            struct States::ChangeMessage changeMessage;
+            T changeMessage;
 
             xQueueReceive(this->_pinQueueChange, &( changeMessage ), portMAX_DELAY);
 

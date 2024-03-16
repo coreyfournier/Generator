@@ -21,6 +21,7 @@
 #include "IO/RtosQueue.cpp"
 #include "IO/RtosSerial.cpp"
 #include "States/ChangeMessage.cpp"
+#include "States/PinChange.cpp"
 #include "Devices/PowerDevice.cpp"
 #include "Devices/StartableDevice.cpp"
 #include "Devices/TransferSwitch.cpp"
@@ -52,7 +53,8 @@ Pin transfer = Pin(TransferGPIO, false, "Transfer", PinRole::Transfer);
 Pin genStart = Pin(StartGPIO, false, "Start Generator", PinRole::Start);
 Pin genStop = Pin(StopGPIO, false, "Stop Generator", PinRole::Stop);
 IO::RtosIO board = IO::RtosIO();
-IO::RtosQueue queue = IO::RtosQueue();
+IO::RtosQueue<States::ChangeMessage> stateQueue = IO::RtosQueue<States::ChangeMessage>();
+IO::RtosQueue<States::PinChange> pinQueue = IO::RtosQueue<States::PinChange>();
 IO::RtosSerial s = IO::RtosSerial();
 
 Devices::StartableDevice generator = Devices::StartableDevice(
@@ -84,7 +86,8 @@ Orchestration* view = new Orchestration(
   &generator,
   &transferSwitch,
   &board,
-  &queue,
+  &stateQueue,
+  &pinQueue,
   &s);
 
 TaskHandle_t webSiteTask;
@@ -168,11 +171,20 @@ void setup() {
   
   delay(500);
 
+  xTaskCreatePinnedToCore(
+        /* Task function. */
+          [](void *params){ view->WaitAndListenForPinChanges(); },
+          "Interupt Task Handler",     /* name of task. */
+          10000,       /* Stack size of task */
+          NULL,
+          2,           /* priority of the task */
+          NULL,      /* Task handle to keep track of created task */
+          1);          /* pin task to core 1 */ 
    
   xTaskCreatePinnedToCore(
         /* Task function. */
-          [](void *params){ view->WaitAndListen(); },
-          "Interupt Task Handler",     /* name of task. */
+          [](void *params){ view->WaitAndListenForStateChanges(); },
+          "State Task Handler",     /* name of task. */
           10000,       /* Stack size of task */
           NULL,
           3,           /* priority of the task */

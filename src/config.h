@@ -16,7 +16,7 @@ const int DefaultGeneratorTimeToWaitForStart = 1000 * 8;
 const uint32_t MinTimeAllowedBetweenMessages = 500;
 
 /// @brief Time in milliseconds to wait to confirm the utility is still off
-const int DefaultUtilityOffWaitTime = 2000;
+const int DefaultUtilityOffWaitTime = 1000 * 2;
 
-const int DefaultDelayUtilityOnWaitTime = 2000;
+const int DefaultDelayUtilityOnWaitTime = 1000 * 2;
 

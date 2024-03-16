@@ -3,12 +3,13 @@
 
 namespace IO
 {
+    template<typename T>
     class IQueue
     {
         public:
-        virtual void QueueMessage(States::ChangeMessage& cm) = 0;
+        virtual void QueueMessage(T& cm) = 0;
 
-        virtual States::ChangeMessage BlockAndDequeue() = 0;
+        virtual T BlockAndDequeue() = 0;
         
     };
     
