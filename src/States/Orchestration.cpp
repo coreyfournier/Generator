@@ -233,6 +233,8 @@ namespace States
             {
                 //this->_serial->Println(IO::string_format("WaitAndListen loop"));
                 changeMessage = this->_pinQueueChange->BlockAndDequeue();
+
+                this->_board->TaskDelay(100);
                 
                 if (gpioLastChanged.find(changeMessage.pin->gpio) == gpioLastChanged.end()) {
                     //When initalizing it make sure it will be at least the minimum
