@@ -47,7 +47,7 @@ const int L2OnSenseGpio = 32;
 const int GeneratorOnSenseGpio = 14;
 
 Pin L1OnSense = Pin(L1OnSenseGpio, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
-Pin L2OnSense = Pin(L2OnSenseGpio, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
+//Pin L2OnSense = Pin(L2OnSenseGpio, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
 Pin generatorL1OnSense = Pin(GeneratorOnSenseGpio, false, "Generator on/off", true, PinRole::GeneratorOnL1);
 Pin transfer = Pin(TransferGPIO, false, "Transfer", PinRole::Transfer);
 Pin genStart = Pin(StartGPIO, false, "Start Generator", PinRole::Start);
@@ -64,7 +64,7 @@ Devices::StartableDevice generator = Devices::StartableDevice(
   &genStop,
   &board
 );
-Devices::PowerDevice utility = Devices::PowerDevice(&L1OnSense, &L2OnSense, &board);
+Devices::PowerDevice utility = Devices::PowerDevice(&L1OnSense, &board);
 Devices::TransferSwitch transferSwitch = Devices::TransferSwitch(&transfer, &board, &s);
 
 const gpio_int_type_t int_type = GPIO_INTR_ANYEDGE;
@@ -132,9 +132,9 @@ void setup() {
   digitalWrite(StartGPIO, LOW);
   pinMode(StopGPIO, OUTPUT);
   digitalWrite(StopGPIO, LOW);  
-  pinMode(L1OnSense.gpio, INPUT_PULLDOWN);
-  pinMode(L2OnSense.gpio, INPUT_PULLDOWN);
-  pinMode(generatorL1OnSense.gpio, INPUT_PULLDOWN);
+  pinMode(L1OnSense.gpio, INPUT);
+  //pinMode(L2OnSense.gpio, INPUT);
+  pinMode(generatorL1OnSense.gpio, INPUT);
 
    /* Input pins */
   gpio_int_type_t tt;
@@ -195,7 +195,7 @@ void setup() {
   //Listen for the state changes
   attachInterrupt(digitalPinToInterrupt(generatorL1OnSense.gpio), generatorSenseChange, CHANGE);
   attachInterrupt(digitalPinToInterrupt(L1OnSense.gpio), L1SenseChange, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(L2OnSense.gpio), L2SenseChange, CHANGE);  
+  //attachInterrupt(digitalPinToInterrupt(L2OnSense.gpio), L2SenseChange, CHANGE);  
 }
 
 void generatorSenseChange()
@@ -208,10 +208,10 @@ void L1SenseChange()
   view->PinChanged(L1OnSense, true);
 }
 
-void L2SenseChange()
-{
-  view->PinChanged(L2OnSense, true);
-}
+// void L2SenseChange()
+// {
+//   view->PinChanged(L2OnSense, true);
+// }
 
 void WebsiteTaskHandler(void * pvParameters)
 {

@@ -3,6 +3,7 @@
 #include "IO/IPinChangeListner.h"
 #include "IO/Pin.cpp"
 #include "PowerDevice.cpp"
+#include "config.h"
 
 using namespace IO;
 
@@ -30,15 +31,17 @@ namespace Devices
         void Start()
         {            
             this->_board->DigitalWrite(*this->_start, true);
-            this->_board->Delay(1000);
+            this->_board->Delay(DefaultTimeToTriggerStart);
             this->_board->DigitalWrite(*this->_start, false);
         }
 
         void Stop()
         {            
-            this->_board->DigitalWrite(*this->_stop, true);
-            this->_board->Delay(1000);
-            this->_board->DigitalWrite(*this->_stop, false);
+            // this->_board->DigitalWrite(*this->_stop, true);
+            // this->_board->Delay(1000);
+            // this->_board->DigitalWrite(*this->_stop, false);
+            //Use the same pin to stop it.
+            this->Start();
         }
         
     };

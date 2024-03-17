@@ -20,3 +20,5 @@ const int DefaultUtilityOffWaitTime = 1000 * 2;
 
 const int DefaultDelayUtilityOnWaitTime = 1000 * 2;
 
+const int DefaultTimeToTriggerStart = 1000;
+
