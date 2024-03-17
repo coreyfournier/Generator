@@ -39,7 +39,7 @@ WiFiServer server(80);
 
 // Assign output variables to GPIO pins
 //https://learn.adafruit.com/assets/111179
-const int TransferGPIO = 21;
+const int TransferGPIO = 12;
 const int StartGPIO = 27; //A10 
 const int StopGPIO = 33; //A9 AMessage
 const int L1OnSenseGpio = 15;
