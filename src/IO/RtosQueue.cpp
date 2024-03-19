@@ -14,21 +14,23 @@ namespace IO
         QueueHandle_t _pinQueueChange;
 
         public:
-        RtosQueue()
+        /// @brief 
+        /// @param queueSize How many items the queue can hold
+        RtosQueue(int queueSize = 10)
         {
-            this->_pinQueueChange = xQueueCreate(10, sizeof(T)); 
+            this->_pinQueueChange = xQueueCreate(queueSize, sizeof(T*)); 
         }
 
         void QueueMessage(T* cm)
         {
-            xQueueSendToBackFromISR(this->_pinQueueChange, (void *)cm, NULL);
+            xQueueSendToBackFromISR(this->_pinQueueChange, &cm, NULL);
         }
 
         T* BlockAndDequeue()
         {
             T* changeMessage;
 
-            xQueueReceive(this->_pinQueueChange, changeMessage, portMAX_DELAY);
+            xQueueReceive(this->_pinQueueChange, &(changeMessage), portMAX_DELAY);
 
             return changeMessage;
         }

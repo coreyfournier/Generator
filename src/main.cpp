@@ -91,22 +91,26 @@ void setup() {
   //mount the file system
   SPIFFS.begin(true);
 
-  // Connect to Wi-Fi network with SSID and password
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) 
+  if(ssid == nullptr)
+    Serial.print("Wifi SSID not provided, will not connect or run the webserver.");
+  else
   {
-    delay(500);
-    Serial.print(".");
+    // Connect to Wi-Fi network with SSID and password
+    Serial.print("Connecting to ");
+    Serial.println(ssid);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) 
+    {
+      delay(500);
+      Serial.print(".");
+    }
+    // Print local IP address and start web server
+    Serial.println("");
+    Serial.println("WiFi connected.");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+    server.begin();  
   }
-  // Print local IP address and start web server
-  Serial.println("");
-  Serial.println("WiFi connected.");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  server.begin();  
-
 
   /*Configure all of the GPIO pins*/
   pinMode(TransferGPIO, OUTPUT);

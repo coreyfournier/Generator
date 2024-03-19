@@ -25,6 +25,7 @@
 #include "IO/ISerial.h"
 #include "IO/IQueue.h"
 #include "Devices/IPinList.h"
+#include "IO/RingBuffer.cpp"
 
 #include <stdio.h>
 
@@ -50,6 +51,7 @@ namespace States
         typedef std::pair<uint32_t, int> GpioTimePair;
         IO::ISerial* _serial;
         IO::IBoardIO* _board;
+        IO::RingBuffer<Event>* _lastEvents  = new IO::RingBuffer<Event>(20);
 
         /// @brief Creates a comprehensive list of all of the pins used.
         /// @param pinList 
@@ -291,6 +293,7 @@ namespace States
                 //this->_serial->Println(IO::string_format("WaitAndListen loop"));
                 changeMessage = this->_stateQueueChange->BlockAndDequeue();
                 this->_currentEvent = changeMessage->event;
+                this->_lastEvents->Add(changeMessage->event);
                                     
                 this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));                                                                
 
