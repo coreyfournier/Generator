@@ -36,3 +36,17 @@ https://learn.adafruit.com/adafruit-huzzah32-esp32-feather/pinouts
 
 # PC817X octocoupler
 https://www.farnell.com/datasheets/73758.pdf
+
+# Generac ATS notes
+## Pin out
+* T1 120v AC for battery charger. Needs neutral that's not suppled by the control module.
+* N1 120v AC utility sense. Needs neutral that's not suppled by the control module.
+* N2 120v AC utility sense. Needs neutral that's not suppled by the control module.
+* N1 + N2 = 240v AC.
+* 0 Ground is neg 12v DC from generator.
+* 194 is positive 12v DC from generator.
+* 23 Transfer, causes a transfer to utility when:
+  * generator is running and connected to ATS.
+  * 0 ground -12v DC is connted to 23.
+  * +12v DC is supplied to 194.
+
