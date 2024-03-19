@@ -77,7 +77,7 @@ namespace States
                 //Error states
                 "StartFailure",
                 "Idle",
-                "Disable",
+                "Disabled",
                 "PinChangeRead",
                 "PinChangeNoRead"
             };

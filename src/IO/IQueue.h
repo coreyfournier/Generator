@@ -7,9 +7,9 @@ namespace IO
     class IQueue
     {
         public:
-        virtual void QueueMessage(T& cm) = 0;
+        virtual void QueueMessage(T* cm) = 0;
 
-        virtual T BlockAndDequeue() = 0;
+        virtual T* BlockAndDequeue() = 0;
         
     };
     

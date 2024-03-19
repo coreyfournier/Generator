@@ -20,6 +20,7 @@
 #include "States/TransferToGenerator.cpp"
 #include "States/TransferToUtility.cpp"
 #include "States/Idle.cpp"
+#include "States/Disabled.cpp"
 #include "States/IContext.h"
 #include "IO/ISerial.h"
 #include "IO/IQueue.h"
@@ -37,7 +38,6 @@ namespace States
         Devices::StartableDevice* _generator;
         Devices::PowerDevice* _utility;
         Devices::TransferSwitch* _transferSwitch;        
-        IEvent* _listner;
         std::vector<Pin> _pins;   
         IO::IQueue<States::ChangeMessage>* _stateQueueChange;
         IO::IQueue<States::PinChange>* _pinQueueChange;
@@ -70,12 +70,7 @@ namespace States
         }
             
         public:
-
-        /// @brief Constructor
-        /// @param listner 
-        /// @param board 
         Orchestration(
-            IEvent* listner,
             Devices::PowerDevice* utility,
             Devices::StartableDevice* generator,
             Devices::TransferSwitch* transferSwitch, 
@@ -83,7 +78,7 @@ namespace States
             IO::IQueue<States::ChangeMessage>* stateQueue,
             IO::IQueue<States::PinChange>* pinQueue,
             IO::ISerial* serial
-        ) :  _listner(listner), 
+        ) :  
             _utility(utility),
             _generator(generator),
             _transferSwitch(transferSwitch),
@@ -141,24 +136,21 @@ namespace States
         /// @param requiresRead set to true when the pin value needs to be read and set from the board. False if the system is setting the value.
         void PinChanged(Pin& pin, bool requiresRead)
         {
-            PinChange cm;
-            cm.pin = &pin;            
-            cm.readAndSet = requiresRead;
-            cm.time = this->_board->TicksOfTime();
-            this->_pinQueueChange->QueueMessage(cm);
+            this->_pinQueueChange->QueueMessage(
+                new PinChange(&pin, this->_board->TicksOfTime(), requiresRead)
+            );
         }     
 
-        void StateChange(ChangeMessage& cm)
+        void StateChange(ChangeMessage* cm)
         {
             this->_serial->Println("Queuing message");
-            this->_serial->Println(IO::string_format("State changed '%s' (%i)\n", IEvent::ToName(cm.event).c_str(), cm.event));                        
+            this->_serial->Println(IO::string_format("State changed '%s' (%i)\n", IEvent::ToName(cm->event).c_str(), cm->event));                        
             this->_stateQueueChange->QueueMessage(cm);
         }
 
         void StateChange(Event e)
-        {
-            ChangeMessage cm = ChangeMessage(e, this->_board->TicksOfTime());
-            this->StateChange(cm);
+        {            
+            this->StateChange(new ChangeMessage(e, this->_board->TicksOfTime()));
         }   
 
         /// @brief Reads the states of the utility pins on startup to see what to do. If they are off, then it fires an event.
@@ -180,6 +172,7 @@ namespace States
             this->_stateMap.insert(StatePair(Event::Transfer_To_Generator, transferToGenerator));
             this->_stateMap.insert(StatePair(Event::Transfer_To_Utility, new TransferToUtility(this)));
             this->_stateMap.insert(StatePair(Event::Idle, new States::Idle(this)));
+            this->_stateMap.insert(StatePair(Event::Disable, new States::Disabled(this)));
             
             //This is the initalize
             this->SetDevices();
@@ -223,7 +216,7 @@ namespace States
         void WaitAndListenForPinChanges()
         {
             std::map<int, uint32_t> gpioLastChanged;
-            struct PinChange changeMessage;
+            PinChange* changeMessage;
 
             this->_serial->Println(IO::string_format("Starting Initalize\n"));
             this->Initalize();            
@@ -236,11 +229,11 @@ namespace States
 
                 this->_board->TaskDelay(100);
                 
-                if (gpioLastChanged.find(changeMessage.pin->gpio) == gpioLastChanged.end()) {
+                if (gpioLastChanged.find(changeMessage->pin->gpio) == gpioLastChanged.end()) {
                     //When initalizing it make sure it will be at least the minimum
-                    gpioLastChanged.insert(GpioTimePair(changeMessage.pin->gpio, 0));
+                    gpioLastChanged.insert(GpioTimePair(changeMessage->pin->gpio, 0));
                 } 
-                auto lastChange = gpioLastChanged.find(changeMessage.pin->gpio);
+                auto lastChange = gpioLastChanged.find(changeMessage->pin->gpio);
                 auto timeDiff = this->_board->TicksOfTime() - lastChange->second;
                 
                 //It's with in range update the last time.
@@ -249,22 +242,22 @@ namespace States
                     //Update the last time it was looked at.
                     lastChange->second = this->_board->TicksOfTime();
 
-                    bool pinState = changeMessage.pin->state; 
+                    bool pinState = changeMessage->pin->state; 
                     bool notifyChange = true;
 
-                    if(changeMessage.readAndSet)
+                    if(changeMessage->readAndSet)
                     {
-                        pinState = this->_board->DigitalRead(*changeMessage.pin);
+                        pinState = this->_board->DigitalRead(*changeMessage->pin);
                         //Only fire a message if it actually changed.
-                        notifyChange = (changeMessage.pin->state != pinState);
-                        changeMessage.pin->state = pinState;
+                        notifyChange = (changeMessage->pin->state != pinState);
+                        changeMessage->pin->state = pinState;
                     }                            
                                             
                     this->_serial->Println(IO::string_format(
                         "Pin Change %s (%i) State=%i Timediff=%i Notify=%i CurrentEvent=%s\n", 
-                        changeMessage.pin->name.c_str(), 
-                        changeMessage.pin->gpio, 
-                        changeMessage.pin->state,
+                        changeMessage->pin->name.c_str(), 
+                        changeMessage->pin->gpio, 
+                        changeMessage->pin->state,
                         timeDiff,
                         notifyChange,
                         IEvent::ToName(this->_currentEvent).c_str()));         
@@ -272,8 +265,8 @@ namespace States
                     //Only notify the change if it's idle. Each state knows to check for the generator and utility
                     if(notifyChange && (this->_stateMap[Event::Idle] == this->_currentState))
                     {
-                        if(changeMessage.pin->role == PinRole::UtilityOnL1 || changeMessage.pin->role == PinRole::UtilityOnL2)
-                            if(changeMessage.pin->state)
+                        if(changeMessage->pin->role == PinRole::UtilityOnL1 || changeMessage->pin->role == PinRole::UtilityOnL2)
+                            if(changeMessage->pin->state)
                                 this->StateChange(Event::Utility_On);
                             else
                                 this->StateChange(Event::Utility_Off);
@@ -284,24 +277,26 @@ namespace States
                     //this->_serial->Println(IO::string_format("Event %s was too close together. Exiting", IEvent::ToName(this->_currentEvent).c_str()));     
                 }
             }
+
+            delete changeMessage;
         }
 
         /// @brief Waits for pin change events and sets the pin values 
         void WaitAndListenForStateChanges()
         {
-            struct ChangeMessage changeMessage;
+            ChangeMessage* changeMessage;
 
             while(true)
             {
                 //this->_serial->Println(IO::string_format("WaitAndListen loop"));
                 changeMessage = this->_stateQueueChange->BlockAndDequeue();
-                this->_currentEvent = changeMessage.event;
+                this->_currentEvent = changeMessage->event;
                                     
                 this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));                                                                
 
-                if(this->_stateMap[changeMessage.event] != nullptr)
+                if(this->_stateMap[changeMessage->event] != nullptr)
                 {
-                    this->_currentState = this->_stateMap[changeMessage.event];            
+                    this->_currentState = this->_stateMap[changeMessage->event];            
 
                     this->_serial->Println(IO::string_format("Current State GetName(): '%s'", this->_currentState->GetName().c_str()));
                     
@@ -309,7 +304,7 @@ namespace States
                 }
                 else
                 {
-                    Event e = changeMessage.event;
+                    Event e = changeMessage->event;
                     this->_serial->Println(IO::string_format(
                         "No state map for '%s' (%i) this is probably a substate for the current state\n", 
                         IEvent::ToName(e).c_str(), 
@@ -317,6 +312,8 @@ namespace States
                 }
                 
             }
+
+            delete changeMessage;
         }    
         
         void DigitalWrite(Pin& pin, bool value)

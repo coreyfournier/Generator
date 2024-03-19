@@ -67,21 +67,7 @@ Devices::StartableDevice generator = Devices::StartableDevice(
 Devices::PowerDevice utility = Devices::PowerDevice(&L1OnSense, &board);
 Devices::TransferSwitch transferSwitch = Devices::TransferSwitch(&transfer, &board, &s);
 
-const gpio_int_type_t int_type = GPIO_INTR_ANYEDGE;
-
-class EventStub : public IEvent
-{
-  public:
-  void Change(Event e)
-  {
-    Serial.printf("Event=%s", IEvent::ToName(e).c_str());
-  }
-};
-
-EventStub es = EventStub();
-
 Orchestration* view = new Orchestration( 
-  &es, 
   &utility,
   &generator,
   &transferSwitch,
@@ -136,29 +122,7 @@ void setup() {
   //pinMode(L2OnSense.gpio, INPUT);
   pinMode(generatorL1OnSense.gpio, INPUT);
 
-   /* Input pins */
-  gpio_int_type_t tt;
-  
-
-  //gpio_set_intr_type((gpio_num_t)GeneratorOnSenseGPIO, GPIO_INTR_ANYEDGE);
-
-    // gpio_config_t io_conf = {};
-    // io_conf.intr_type = GPIO_INTR_ANYEDGE;
-    // io_conf.mode = GPIO_MODE_INPUT;
-    // io_conf.pin_bit_mask = BIT64(GPIO_NUM_21);
-    // io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    // io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-    // gpio_config(&io_conf);
-
-    // esp_err_t  installResponse = gpio_install_isr_service(0);
-    // if(installResponse == ESP_OK)
-    // {
-    //   gpio_isr_handler_add(GPIO_NUM_21, button_isr_handler, NULL);
-    // }
-    // else
-    //   Serial.printf("Failed to install %i\n", installResponse);
     
-  
 
   xTaskCreatePinnedToCore(
         WebsiteTaskHandler,   /* Task function. */

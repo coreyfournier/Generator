@@ -17,7 +17,7 @@ namespace IO
 
         public:
 
-        void QueueMessage(T& cm)
+        void QueueMessage(T* cm)
         {
             //xQueueSendToBackFromISR(this->_pinQueueChange, (void *)&cm, NULL);
             // {
@@ -27,7 +27,7 @@ namespace IO
             // this->d_condition.notify_one();
         }
 
-        T BlockAndDequeue()
+        T* BlockAndDequeue()
         {
             /*
             struct States::ChangeMessage changeMessage;
@@ -43,12 +43,10 @@ namespace IO
                 return !this->d_queue.empty(); 
             });
 
-            T rc(std::move(this->d_queue.back()));
+            T* rc(std::move(this->d_queue.back()));
             this->d_queue.pop_back();
 
-            return rc;
-
-         
+            return rc;         
         }
 
     };

@@ -19,16 +19,16 @@ namespace IO
             this->_pinQueueChange = xQueueCreate(10, sizeof(T)); 
         }
 
-        void QueueMessage(T& cm)
+        void QueueMessage(T* cm)
         {
-            xQueueSendToBackFromISR(this->_pinQueueChange, (void *)&cm, NULL);
+            xQueueSendToBackFromISR(this->_pinQueueChange, (void *)cm, NULL);
         }
 
-        T BlockAndDequeue()
+        T* BlockAndDequeue()
         {
-            T changeMessage;
+            T* changeMessage;
 
-            xQueueReceive(this->_pinQueueChange, &( changeMessage ), portMAX_DELAY);
+            xQueueReceive(this->_pinQueueChange, changeMessage, portMAX_DELAY);
 
             return changeMessage;
         }
