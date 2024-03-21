@@ -367,5 +367,10 @@ namespace States
 
             return nullptr;
         }
+
+        const std::vector<Event> GetLastEvents()
+        {
+            return this->_lastEvents->GetBuffer();
+        }
     };
 }

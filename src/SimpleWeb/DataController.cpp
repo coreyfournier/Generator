@@ -91,7 +91,7 @@ namespace SimpleWeb
             }
             else if(header.indexOf("GET /data HTTP/1.1") >= 0)
             {   
-                StaticJsonDocument<800> doc;      
+                StaticJsonDocument<1400> doc;      
                 // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
                 // and a content-type so the client knows what's coming, then a blank line:
                 client.println("HTTP/1.1 200 OK");
@@ -101,10 +101,12 @@ namespace SimpleWeb
                 
                 Serial.printf("data...");
                 
-                doc["state"] = this->_view->GetStateName();                
+                doc["state"] = this->_view->GetStateName();         
+                auto t = this->_view->GetLastEvents();
 
-                Serial.printf("pins=%i\n", this->_view->PinCount());
-
+                for(int i=0; i< t.size(); i++)
+                    doc["lastStates"][i] = States::IEvent::ToName(t[i]);
+              
                 for(int i=0; i< this->_view->PinCount(); i++)
                 {
                     Pin pin = this->_view->GetPin(i);

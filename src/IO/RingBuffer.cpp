@@ -20,40 +20,18 @@ namespace IO
             
         }
 
-        T* GetBuffer()
+        const std::vector<T> GetBuffer()
         {
-            T arr[this->_buffer.size()];
-            
-            //Front of the array
-            for(int i = this->_startIndex - 1 ; i >= 0; i--)
-                arr[i] = this->_buffer[i];
-            
-            //End of the array 
-            for(int i = this->_startIndex; i< this->_buffer.size(); i++)
-                arr[i] = this->_buffer[i];
-
-
-            return arr;
+           return this->_buffer;           
         }
 
         void Add(T item)
         {
-            //It's not full yet
-            if(this->_buffer.size() <= this->_maxSize)
-            {
-                this->_buffer.push_back(item);
-            }
-            else
-            {
+            this->_buffer.push_back(item);
 
-                this->_startIndex ++;               
-
-                if(this->_startIndex > this->_maxSize)
-                    this->_startIndex = 0;
-
-                this->_buffer[this->_startIndex] = item;
-            }
-            
+            //It's at the max so take one off
+            if(this->_buffer.size() >= this->_maxSize)
+                this->_buffer.pop_back();    
         }
 
     };
