@@ -105,7 +105,7 @@ namespace SimpleWeb
                 auto t = this->_view->GetLastEvents();
 
                 for(int i=0; i< t.size(); i++)
-                    doc["lastStates"][i] = States::IEvent::ToName(t[i]);
+                    doc["lastEvents"][i] = States::IEvent::ToName(t[i]);
               
                 for(int i=0; i< this->_view->PinCount(); i++)
                 {
