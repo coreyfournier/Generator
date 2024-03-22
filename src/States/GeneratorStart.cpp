@@ -75,7 +75,7 @@ namespace States
 
                     //Stop it from doing anything else.
                     if(this->_totalStartTries == this->_maxTimesToStart)
-                        this->_context->StateChange(Event::Disable);
+                        this->_context->StateChange(Event::Disabled);
                 }
             }
         }

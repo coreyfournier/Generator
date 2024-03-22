@@ -47,7 +47,7 @@ namespace SimpleWeb
                 else
                 {                    
                     States::Event event = (States::Event)doc["eventId"].as<int>();                         
-                    if(event == States::Event::Idle || event == States::Event::Disable)
+                    if(event == States::Event::Idle || event == States::Event::Disabled)
                     {
                         this->_view->StateChange(event);
                         doc["success"] = true;
@@ -82,8 +82,13 @@ namespace SimpleWeb
                 client.println(); 
                 
                 Serial.printf("data...");
+                doc["disabledId"] = (int)States::Event::Disabled;
+                doc["idleId"] = (int)States::Event::Idle;
                 
-                doc["current"] = this->_view->GetStateName();         
+                JsonObject currentState = doc.createNestedObject("current");
+                currentState["name"] = this->_view->GetStateName();
+                currentState["id"] = (int)this->_view->GetState();
+                
                 auto lastEvents = this->_view->GetLastEvents();
                 int i=0;
                 for (auto e = lastEvents.begin(); e != lastEvents.end(); ++e)

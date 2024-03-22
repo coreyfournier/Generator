@@ -17,10 +17,9 @@
         <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js" integrity="sha256-lSjKY0/srUM9BE3dPm+c4fBo1dky2v27Gdjm2uoZaL0=" crossorigin="anonymous"></script>
     </head>
-    <body>
-        
+    <body>        
         <div class="container" id="container">
-            <h1 onclick="$('#pin-body').empty();$('#last-events-body').empty();loadData();">Generator Control &#8635;</h1>
+            <h1 onclick="loadData();">Generator Control &#8635;</h1>
             <div class='col-sm'>
             <div class="panel panel-default" >
                 <div class="panel-heading">
@@ -36,6 +35,14 @@
                 <div class="panel-body" id="last-events-body">
                 </div>
             </div>
+
+            <div class="panel panel-default" >
+                <div class="panel-heading">
+                    <h3 class="panel-title">State</h3> 
+                </div>
+                <div class="panel-body" id="state-body">
+                </div>
+            </div>
         </div>
     </body>
 </html>
@@ -48,6 +55,8 @@ $(document).ready(function(){
 function loadData()
 {
     $.getJSON("/data", function(data){
+        $('#pin-body').empty();
+
         var button = "";
         data.pins.forEach((pin)=>{
             button += `   <label for='gpio_${pin.gpio}'>${pin.name} (${pin.gpio})</label>`;
@@ -66,10 +75,49 @@ function loadData()
         $("#pin-body").append(button);
     });
 
+    loadStates();    
+}
+
+function loadStates()
+{
     $.getJSON("/state", function(data){
+        $('#last-events-body').empty();
+        $('#state-body').empty();
+
         data.lastEvents.forEach((event)=>{
             $("#last-events-body").append(`<div>${event}</div>\n`);
-        });        
+        });
+        if(data.current.id == data.disableId)
+            $("#state-body").append(`<button onclick="changeState(${data.idleId})">Enable</button>\n`);
+        else if(data.current.id == data.idleId)
+            $("#state-body").append(`<button onclick="changeState(${data.disabledId})">Disable</button>\n`);
+        else
+            $("#state-body").append(`<div>Can't change state while it's running</div>\n`);
+    });
+}
+
+function changeState(toEventId)
+{
+    $.ajax({
+        type: "POST",
+        url: `/state`,
+        // The key needs to match your method's input parameter (case-sensitive).
+        data: JSON.stringify({
+            eventId: toEventId
+        }),        
+        contentType: 'application/json',
+        dataType: "json",
+        headers: {
+            "accept": "application/json"
+        },
+        success: function(data){            
+            console.log(JSON.stringify(data));   
+            //Reload the states
+            loadStates();         
+        },
+        error: function(errMsg) {
+            alert(errMsg);
+        }
     });
 }
 

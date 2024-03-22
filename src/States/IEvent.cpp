@@ -35,7 +35,7 @@ namespace States
         Start_Failure = 19,
         Idle = 20,
         //No state changes should take place
-        Disable = 21
+        Disabled = 21
     };
 
     class IEvent

@@ -178,7 +178,7 @@ namespace States
             this->_stateMap.insert(StatePair(Event::Transfer_To_Generator, transferToGenerator));
             this->_stateMap.insert(StatePair(Event::Transfer_To_Utility, new TransferToUtility(this)));
             this->_stateMap.insert(StatePair(Event::Idle, new States::Idle(this)));
-            this->_stateMap.insert(StatePair(Event::Disable, new States::Disabled(this)));
+            this->_stateMap.insert(StatePair(Event::Disabled, new States::Disabled(this)));
             
             this->SetDevices();
             this->StateChange(Event::Initalize);        
