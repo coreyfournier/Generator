@@ -87,7 +87,7 @@ function loadStates()
         data.lastEvents.forEach((event)=>{
             $("#last-events-body").append(`<div>${event}</div>\n`);
         });
-        if(data.current.id == data.disableId)
+        if(data.current.id == data.disabledId)
             $("#state-body").append(`<button onclick="changeState(${data.idleId})">Enable</button>\n`);
         else if(data.current.id == data.idleId)
             $("#state-body").append(`<button onclick="changeState(${data.disabledId})">Disable</button>\n`);
