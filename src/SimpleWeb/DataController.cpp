@@ -102,10 +102,13 @@ namespace SimpleWeb
                 Serial.printf("data...");
                 
                 doc["state"] = this->_view->GetStateName();         
-                auto t = this->_view->GetLastEvents();
-
-                for(int i=0; i< t.size(); i++)
-                    doc["lastEvents"][i] = States::IEvent::ToName(t[i]);
+                auto lastEvents = this->_view->GetLastEvents();
+                int i=0;
+                for (auto e = lastEvents.begin(); e != lastEvents.end(); ++e)
+                {
+                    doc["lastEvents"][i] = States::IEvent::ToName(*e);
+                    i++;
+                }
               
                 for(int i=0; i< this->_view->PinCount(); i++)
                 {

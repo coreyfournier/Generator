@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <list>
 #include <stdint.h>
 #include <map>
 #include "IO/IBoardIo.h"
@@ -9,6 +10,7 @@
 #include "Devices/StartableDevice.cpp"
 #include "Devices/TransferSwitch.cpp"
 #include "States/IEvent.cpp"
+#include "States/Initalize.cpp"
 #include "States/ChangeMessage.cpp"
 #include "States/PinChange.cpp"
 #include "States/IState.h"
@@ -166,6 +168,7 @@ namespace States
             auto generatorOn = new GeneratorOn(this);
             auto transferToGenerator = new TransferToGenerator(this);
 
+            this->_stateMap.insert(StatePair(Event::Initalize, new States::Initalize(this)));
             this->_stateMap.insert(StatePair(Event::Utility_On, utilityOn));            
             this->_stateMap.insert(StatePair(Event::Utility_Off, utilityOff));
             this->_stateMap.insert(StatePair(Event::Generator_Start, generatorStart));
@@ -176,9 +179,8 @@ namespace States
             this->_stateMap.insert(StatePair(Event::Idle, new States::Idle(this)));
             this->_stateMap.insert(StatePair(Event::Disable, new States::Disabled(this)));
             
-            //This is the initalize
             this->SetDevices();
-            this->StateChange(Event::Idle);        
+            this->StateChange(Event::Initalize);        
         }
 
         void SetDevices()
@@ -192,10 +194,6 @@ namespace States
             this->AddDevicePins(this->_utility);
             this->AddDevicePins(this->_generator);
             this->AddDevicePins(this->_transferSwitch);
-
-            //It's not on, so trigger the utility off state
-            if(!this->_utility->IsOn())
-                this->StateChange(Event::Utility_Off);
 
             this->_serial->Println("Done setting devices");
         } 
@@ -368,7 +366,7 @@ namespace States
             return nullptr;
         }
 
-        const std::vector<Event> GetLastEvents()
+        const std::list<Event> GetLastEvents()
         {
             return this->_lastEvents->GetBuffer();
         }

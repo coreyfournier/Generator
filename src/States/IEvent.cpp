@@ -34,9 +34,7 @@ namespace States
         //Any other events
         Start_Failure = 19,
         Idle = 20,
-        Disable = 21,
-        PinChange_Read_Value = 22,
-        PinChange_No_Read_Value = 23
+        Disable = 21
     };
 
     class IEvent
@@ -48,38 +46,36 @@ namespace States
 
         static string ToName(Event e)
         {
-            static string _enumStrings[24] = { 
+            static string _enumStrings[22] = { 
 
                 "Initalize",
                 //Startup phases
                 "Utility Off",
-                "UtilityOffWait",
-                "UtilityOffWaitDone",   
+                "Utility Off Wait",
+                "Utility Off Wait Done",   
                          
-                "GeneratorStart",
-                "GeneratorStarting",
-                "GeneratorOn",
-                "GeneratorWarmUp",
-                "GeneratorWarmUpDone",
-                "TransferToGenerator",
+                "Generator Start",
+                "Generator Starting",
+                "Generator On",
+                "Generator Warm Up",
+                "Generator Warm Up Done",
+                "Transfer To Generator",
 
                 //Shut down phases
-                "UtilityOn",
-                "UtilityOnWait",
-                "UtilityOnWaitDone",
-                "TransferToUtility",
-                "GeneratorStop",
-                "GeneratorCoolingDown", 
-                "GeneratorStopping",
-                "GeneratorStopFailed",
-                "GeneratorOff",
+                "Utility On",
+                "Utility On Wait",
+                "Utility On Wait Done",
+                "Transfer To Utility",
+                "Generator Stop",
+                "Generator Cooling Down", 
+                "Generator Stopping",
+                "Generator Stop Failed",
+                "Generator Off",
 
                 //Error states
-                "StartFailure",
+                "Start Failure",
                 "Idle",
-                "Disabled",
-                "PinChangeRead",
-                "PinChangeNoRead"
+                "Disabled"
             };
             
             return _enumStrings[(int)e];

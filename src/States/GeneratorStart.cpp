@@ -72,6 +72,10 @@ namespace States
                         this->_context->GetSerialIO()->Println(IO::string_format("Failed to start %i times\n", this->_totalStartTries));
 
                     } while (this->_totalStartTries < this->_maxTimesToStart);                    
+
+                    //Stop it from doing anything else.
+                    if(this->_totalStartTries == this->_maxTimesToStart)
+                        this->_context->StateChange(Event::Disable);
                 }
             }
         }

@@ -1,5 +1,5 @@
 #pragma once
-#include <vector>
+#include <list>
 
 namespace IO
 {
@@ -9,7 +9,7 @@ namespace IO
     class RingBuffer
     {
         private:
-        std::vector<T> _buffer;
+        std::list<T> _buffer;
         int _startIndex = 0;
         int _maxSize;
 
@@ -20,20 +20,19 @@ namespace IO
             
         }
 
-        const std::vector<T> GetBuffer()
+        const std::list<T> GetBuffer()
         {
            return this->_buffer;           
         }
 
         void Add(T item)
         {
-            this->_buffer.push_back(item);
+            this->_buffer.push_front(item);
 
-            //It's at the max so take one off
+            //It's at the max so take one off the front
             if(this->_buffer.size() >= this->_maxSize)
                 this->_buffer.pop_back();    
         }
-
     };
     
 } // namespace IO
