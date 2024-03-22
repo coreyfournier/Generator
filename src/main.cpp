@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include "Arduino.h"
 #include "SimpleWeb/DataController.cpp"
+#include "SimpleWeb/StateController.cpp"
 #include "SimpleWeb/IndexController.cpp"
 #include "SimpleWeb/Router.h"
 #include "SimpleWeb/IController.h"
@@ -190,6 +191,7 @@ void WebsiteTaskHandler(void * pvParameters)
   
   //Controllers must be placed in the order in which they should check the header
   router.AddController(new SimpleWeb::DataController(view));
+  router.AddController(new SimpleWeb::StateController(view));
   router.AddController(new SimpleWeb::IndexController());
   
   Serial.println("Router done ");

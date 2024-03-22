@@ -99,16 +99,7 @@ namespace SimpleWeb
                 client.println("Connection: close");
                 client.println(); 
                 
-                Serial.printf("data...");
-                
-                doc["state"] = this->_view->GetStateName();         
-                auto lastEvents = this->_view->GetLastEvents();
-                int i=0;
-                for (auto e = lastEvents.begin(); e != lastEvents.end(); ++e)
-                {
-                    doc["lastEvents"][i] = States::IEvent::ToName(*e);
-                    i++;
-                }
+                Serial.printf("data...");                
               
                 for(int i=0; i< this->_view->PinCount(); i++)
                 {

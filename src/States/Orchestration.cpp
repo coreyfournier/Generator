@@ -149,6 +149,7 @@ namespace States
         {
             this->_serial->Println("Queuing message");
             this->_serial->Println(IO::string_format("State changed '%s' (%i)\n", IEvent::ToName(cm->event).c_str(), cm->event));                        
+            this->_lastEvents->Add(cm->event);
             this->_stateQueueChange->QueueMessage(cm);
         }
 
@@ -290,8 +291,7 @@ namespace States
             {
                 //this->_serial->Println(IO::string_format("WaitAndListen loop"));
                 changeMessage = this->_stateQueueChange->BlockAndDequeue();
-                this->_currentEvent = changeMessage->event;
-                this->_lastEvents->Add(changeMessage->event);
+                this->_currentEvent = changeMessage->event;                
                                     
                 this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));                                                                
 
