@@ -129,14 +129,14 @@ void setup() {
 
     
 
-  xTaskCreatePinnedToCore(
+  xTaskCreate(
         WebsiteTaskHandler,   /* Task function. */
         "Task1",     /* name of task. */
         10000,       /* Stack size of task */
         NULL,        /* parameter of the task */
         2,           /* priority of the task */
-        &webSiteTask,      /* Task handle to keep track of created task */
-        0);          /* pin task to core 0 */  
+        &webSiteTask      /* Task handle to keep track of created task */
+        );
   
   delay(500);
 
