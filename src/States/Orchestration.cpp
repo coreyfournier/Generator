@@ -181,7 +181,7 @@ namespace States
             this->_stateMap.insert(StatePair(Event::Disabled, new States::Disabled(this)));
             
             this->SetDevices();
-            this->StateChange(Event::Initalize);        
+            this->StateChange(Event::Disabled);        
         }
 
         void SetDevices()
