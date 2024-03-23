@@ -21,6 +21,7 @@ namespace States
             auto* utility = this->_context->GetUtility();
             auto* generator = this->_context->GetGenerator();
             auto* transferSwitch = this->_context->GetTransferSwitch();
+
             if(utility->IsOn())
             {
                 this->_context->StateChange(Event::Utility_On_Wait);
@@ -32,8 +33,11 @@ namespace States
                         this->_context->StateChange(Event::Transfer_To_Utility);
                     else if(generator->IsOn())
                         this->_context->StateChange(Event::Generator_Stop);
-
-                }                
+                    else
+                        this->_context->StateChange(Event::Idle);
+                }
+                else                
+                    this->_context->StateChange(Event::Utility_Off);
             }
         }      
 

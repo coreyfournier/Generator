@@ -22,16 +22,19 @@ namespace States
             auto* generator = this->_context->GetGenerator();
             auto* transferSwitch = this->_context->GetTransferSwitch();
 
-
             if(utility->IsOn())
             {
                 transferSwitch->Toggle(false);
 
                 if(generator->IsOn())
+                {
                     this->_context->StateChange(Event::Generator_Stop);
+                    return;
+                }
             }
-        }
-      
+
+            this->_context->StateChange(Event::Idle);
+        }      
 
         string GetName()
         {

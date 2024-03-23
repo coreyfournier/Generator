@@ -319,7 +319,7 @@ namespace States
         
         void DigitalWrite(Pin& pin, bool value)
         {
-            this->_serial->Println(IO::string_format("DigitalWrite pin %i", pin.gpio));
+            this->_serial->Println(IO::string_format("DigitalWrite pin %i %i to %i", pin.gpio, pin.state, value));
             if(value != pin.state)
             {
                 this->_board->DigitalWrite(pin, value);
