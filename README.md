@@ -37,7 +37,7 @@ https://learn.adafruit.com/adafruit-huzzah32-esp32-feather/pinouts
 # PC817X octocoupler
 https://www.farnell.com/datasheets/73758.pdf
 
-# Generac ATS notes
+# Generac 200amp ATS notes
 ## Pin out
 * T1 120v AC for battery charger. Needs neutral that's not suppled by the control module.
 * N1 120v AC utility sense. Needs neutral that's not suppled by the control module.
