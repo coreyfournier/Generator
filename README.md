@@ -49,5 +49,5 @@ https://www.farnell.com/datasheets/73758.pdf
   * generator is running and connected to ATS.
   * 0 ground -12v DC is connted to 23.
   * +12v DC is supplied to 194.
-  * I was unable to trigger the transfer via optocoupler. It only worked via relay.
+  * I wasn't unable to trigger the transfer via optocoupler. I could hear a small click in the ATS, but it never fully engaged. It only worked via relay.
 
