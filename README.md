@@ -1,4 +1,4 @@
-# Westinghouse Generator Controller via ESP32
+# Westinghouse Generator Controller via ESP32 Feather
 
 Testing UI to confirm generator control works with the circuit board.
 ![POC UI while testing](/assets/PocUI.PNG "POC UI while testing")
@@ -30,14 +30,19 @@ Follow directions here: https://bromleysat.com/installing-drivers-for-the-esp32
 CLick on Upload Filesystem image under Platfom in the PlatformIo plugin. For more information see:
 https://randomnerdtutorials.com/esp32-vs-code-platformio-spiffs/
 
+# Westinghouse Generator
+Pin connector for the generator: https://www.amazon.com/MECCANIXITY-Aviation-Connector-Terminals-Waterproof/dp/B09BMYB9Y4/
 
-# Pinout documentation
+Reddit post with pin diagrams.
+https://www.reddit.com/r/OffGrid/comments/mxygik/westinghouse_generator_automatic_transfer_switch/
+
+# ESP32 Feather Pinout documentation
 https://learn.adafruit.com/adafruit-huzzah32-esp32-feather/pinouts
 
 # PC817X octocoupler
 https://www.farnell.com/datasheets/73758.pdf
 
-# Generac ATS notes
+# Generac 200amp ATS notes
 ## Pin out
 * T1 120v AC for battery charger. Needs neutral that's not suppled by the control module.
 * N1 120v AC utility sense. Needs neutral that's not suppled by the control module.
