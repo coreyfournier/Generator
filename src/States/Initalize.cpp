@@ -8,6 +8,7 @@ using namespace std;
 
 namespace States
 {
+    /// @brief Kicks off the start of the state changes
     class Initalize: public IState
     {
         private:

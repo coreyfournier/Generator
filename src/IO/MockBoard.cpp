@@ -26,7 +26,7 @@ namespace IO
             return true;
         }
 
-        void TaskDelay(int milliseconds)
+        void TaskDelay(int milliseconds, bool yieldToo = false)
         {
 
         }

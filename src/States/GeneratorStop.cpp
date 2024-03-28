@@ -21,14 +21,14 @@ namespace States
             auto* utility = this->_context->GetUtility();
             auto* generator = this->_context->GetGenerator();
             auto* transferSwitch = this->_context->GetTransferSwitch();
+            int attemptsToStop = 0;
 
             if(generator->IsOn())
             {
                 this->_context->StateChange(Event::Generator_Cooling_Down);
                 this->_context->Delay(DefaultGeneratorCoolDownTime);
-                generator->Stop();
-                int attemptsToStop = 0;
-                
+
+                generator->Stop();                
 
                 //Don't try and stop if it isn't even on.
                 if(generator->IsOn())

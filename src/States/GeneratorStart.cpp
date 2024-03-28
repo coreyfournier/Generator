@@ -45,10 +45,11 @@ namespace States
                 {                    
                     do
                     {
+                        this->_context->StateChange(Event::Generator_Starting);
+                        
                         //Start the generator  
                         generator->Start();
-
-                        this->_context->StateChange(Event::Generator_Starting);
+                        
                         this->_context->Delay(this->_timeToWaitForStart);
 
                         if(generator->IsOn())    
@@ -73,7 +74,7 @@ namespace States
 
                     } while (this->_totalStartTries < this->_maxTimesToStart);                    
 
-                    //Stop it from doing anything else.
+                    //Stop it from doing anything else upon too many failures. You must reinitalize it for it run again.
                     if(this->_totalStartTries == this->_maxTimesToStart)
                         this->_context->StateChange(Event::Disabled);
                 }

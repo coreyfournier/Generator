@@ -10,6 +10,25 @@ namespace IO
     class RtosIO : public IBoardIO
     {
         public:
+
+        /// @brief 
+        /// @param gpioPin 
+        /// @param mode OUTPUT, PULLUP, INPUT_PULLUP, PULLDOWN, INPUT_PULLDOWN, OPEN_DRAIN, OUTPUT_OPEN_DRAIN, ANALOG
+        /// @param defaultTo 
+        void SetPinMode(uint8_t gpioPin, uint8_t mode, bool defaultTo)
+        {
+            pinMode(gpioPin, mode);
+            digitalWrite(gpioPin, defaultTo? HIGH : LOW);
+        }
+
+        /// @brief 
+        /// @param gpioPin 
+        /// @param defaultTo 
+        void SetPinMode(uint8_t gpioPin, uint8_t mode)
+        {
+            pinMode(gpioPin, mode);
+        }
+
         bool DigitalRead(Pin& pin)
         {
             return digitalRead(pin.gpio) == HIGH;
@@ -28,17 +47,17 @@ namespace IO
             digitalWrite(pin.gpio, value? HIGH : LOW);
         }
 
-        void TaskDelay(int milliseconds)
+        void TaskDelay(int milliseconds, bool yieldToo = false)
         {
+            if(yieldToo)
+                taskYIELD();
             vTaskDelay(milliseconds);
         }
 
         void Delay(int milliseconds)
         {
-            //Yield then wait
-            taskYIELD();
             //Everything should be running in a task anyway
-            vTaskDelay(milliseconds);
+            delay(milliseconds);
         }
 
         uint32_t TicksOfTime()

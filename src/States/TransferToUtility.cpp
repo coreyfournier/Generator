@@ -24,7 +24,8 @@ namespace States
 
             if(utility->IsOn())
             {
-                transferSwitch->Toggle(false);
+                if(transferSwitch->IsOnGenerator())
+                    transferSwitch->Toggle(false);
 
                 if(generator->IsOn())
                 {

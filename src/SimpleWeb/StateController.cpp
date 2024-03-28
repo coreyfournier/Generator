@@ -46,12 +46,13 @@ namespace SimpleWeb
                 }
                 else
                 {                    
-                    States::Event event = (States::Event)doc["eventId"].as<int>();                         
-                    if(event == States::Event::Idle || event == States::Event::Disabled)
+                    States::Event event = (States::Event)doc["eventId"].as<int>();         
+                    //User allowed states to change it to.                
+                    if(event == States::Event::Initalize || event == States::Event::Disabled || event == States::Event::Idle)
                     {
                         this->_view->StateChange(event);
                         doc["success"] = true;
-                        doc["message"] = IO::string_format("Changed to state %s", States::IEvent::ToName(event));   
+                        doc["message"] = IO::string_format("Changed to state %s", States::IEvent::ToName(event).c_str());   
                         
                         client.println("HTTP/1.1 200 OK");
                     }
@@ -82,7 +83,9 @@ namespace SimpleWeb
                 client.println(); 
                 
                 Serial.printf("data...");
+                //States the user can change it to
                 doc["disabledId"] = (int)States::Event::Disabled;
+                doc["enableId"] = (int)States::Event::Initalize;
                 doc["idleId"] = (int)States::Event::Idle;
                 
                 JsonObject currentState = doc.createNestedObject("current");

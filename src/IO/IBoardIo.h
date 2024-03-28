@@ -22,7 +22,7 @@ namespace IO
         /// @return
         virtual bool DigitalReadAndSet(Pin& pin) = 0;
 
-        virtual void TaskDelay(int milliseconds) = 0;
+        virtual void TaskDelay(int milliseconds, bool yieldToo = false) = 0;
 
         virtual void Delay(int milliseconds) = 0;
 

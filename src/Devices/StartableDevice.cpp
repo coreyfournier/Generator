@@ -31,7 +31,7 @@ namespace Devices
         void Start()
         {            
             this->_board->DigitalWrite(*this->_start, true);
-            this->_board->Delay(DefaultTimeToTriggerStart);
+            this->_board->TaskDelay(DefaultTimeToTriggerStart);
             this->_board->DigitalWrite(*this->_start, false);
         }
 
