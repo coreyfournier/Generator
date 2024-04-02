@@ -1,49 +1,77 @@
-# Westinghouse Generator Controller via ESP32 Feather
+# Westinghouse WGen12000DF Generator and Generac ATS Controller via ESP32 Feather
 
-Testing UI to confirm generator control works with the circuit board.
-![POC UI while testing](/assets/PocUI.PNG "POC UI while testing")
+I live in an older neighborhood that is in a growing area of town. In the past few years the number of power outages has grown with the population. Given that we don't have access to natural gas and I already had purchased WGen12000DF, I set out to see if I could automate the starting, stopping, and transfering to and from utility power. This isn't a complete step by step guid of how to exactly replicate what I did, but should serve as a sufficient starting part for the next guy.
 
-Custom board to interface with Westinghouse WGen12000DF via transfer switch plug
+Check out the [video](https://www.youtube.com/watch?v=OCHMWXXSAaE) of the first automated startup and transfer. 
+
+You can find all of the items I purchased in the [shopping list](/ShoppingList.md)
+
+## Control box
+![Custom Control Box](/assets/Controller-Box.jpg "Custom Control Box")
+
+## Custom Board
+Back of the custom board. As you can see I wired an optocouptler backwards and had to reverse the wires.
+![Back of custom board](/assets/Circuit-Board-Back.jpg "Back of custom board")
+
+Front of board
 ![Custom Etched Board Front](/assets/Custom_Eteched_Board_Front.jpg "Custom Etched Board Front")
 
-![Custom Etched Board Back](/assets/Custom_Eteched_Board_Back.jpg "Custom Etched Board Back")
 
+## Control UI
+UI shows the current state of the sensing (Utility and Generator power). Also allows manuall controlling of the transfer and starting and stopping of the generator. Web app requires Wifi connection. Mine has a batter backup so it always statys connected.
+![POC UI while testing](/assets/Controller-UI.PNG "POC UI while testing")
+
+Web endpoints can be found at: [/state](/src/SimpleWeb/StateController.cpp) and [/data](/src/SimpleWeb/DataController.cpp)
+
+## Automation Actions
+All actions are [implemented](/src/States/IState.h) using a State Machine design pattern. You can see the state actions below in the diagram.
+![State Diagram](/assets/StateDiagram.png "State Diagram")
+
+## Code
+Application is written in c++ and the web interface is a very [simple html page](/data/index.html) with jquery communicating to the backend.
 
 # Setup environment
-Install vs code
-Install platformio plugin. 
+1. Install vs code
+1. Install platformio plugin. 
 
-## Native Unit Tests
+## Wifi and Website
+set ENV_WIFI_PW and ENV_WIFI_SSID in your environment variables of your computer with the ssid and password.
+
+## Setting up to push code to the controller
+Install the usb drivers
+Follow directions here: https://bromleysat.com/installing-drivers-for-the-esp32
+
+## To push any files modified in the "data" folder
+CLick on Upload Filesystem image under Platfom in the PlatformIo plugin. For more information see:
+https://randomnerdtutorials.com/esp32-vs-code-platformio-spiffs/
+
+## Configure Project
+Currently the only way to config the project is making changes to the gpio pins in [main](/src/main.cpp) and [config](/src/config.h). Once the changes are made you can then Upload and Monitor in the Platform IO Tasks.
+
+![Deploy](/assets/UploadAndMonitor.PNG "Deploy")
+
+# Native Unit Tests
 You need to install mingw and set the bin folder to the path.
 Download here: https://github.com/niXman/mingw-builds-binaries/releases
 From the platform io widget Open Native, Open Advanced, and run Test.
 If the code continues to be grayed out after a run, go to featheresp32 -> Miscellaneous and Rebuild IntelliSense Index.
 
-## Wifi
-set ENV_WIFI_PW and ENV_WIFI_SSID in your environment with the ssid and password
-
-# Setting up to push code to the controller
-Install the usb drivers
-Follow directions here: https://bromleysat.com/installing-drivers-for-the-esp32
-
-# To push any files modified in the "data" folder
-CLick on Upload Filesystem image under Platfom in the PlatformIo plugin. For more information see:
-https://randomnerdtutorials.com/esp32-vs-code-platformio-spiffs/
-
-# Westinghouse Generator
+# General Notes
+## Westinghouse Generator
 Pin connector for the generator: https://www.amazon.com/MECCANIXITY-Aviation-Connector-Terminals-Waterproof/dp/B09BMYB9Y4/
 
 Reddit post with pin diagrams.
 https://www.reddit.com/r/OffGrid/comments/mxygik/westinghouse_generator_automatic_transfer_switch/
 
-# ESP32 Feather Pinout documentation
+## ESP32 Feather Pinout documentation
 https://learn.adafruit.com/adafruit-huzzah32-esp32-feather/pinouts
 
-# PC817X octocoupler
+## PC817X octocoupler
 https://www.farnell.com/datasheets/73758.pdf
 
-# Generac 200amp ATS notes
-## Pin out
+## Generac 200amp ATS notes
+![Custom Etched Board Front](/assets/Generac-ATC-pins.jpg "Custom Etched Board Front")
+### Pin out
 * T1 120v AC for battery charger. Needs neutral that's not suppled by the control module.
 * N1 120v AC utility sense. Needs neutral that's not suppled by the control module.
 * N2 120v AC utility sense. Needs neutral that's not suppled by the control module.
