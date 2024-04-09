@@ -1,9 +1,5 @@
 #ifndef PIO_UNIT_TESTING
 
-/*********
-  Rui Santos
-  Complete project details at http://randomnerdtutorials.com  
-*********/
 #define ST(A) #A
 #define STR(A) ST(A)
 
