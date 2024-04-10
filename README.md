@@ -18,7 +18,7 @@ Front of board
 
 
 ## Control UI
-UI shows the current state of the sensing (Utility and Generator power) and last events that occurred. Also allows manual controlling of the transfer, starting, and stopping of the generator. Web app requires Wifi connection. Mine has a batter backup so it always statys connected.
+UI shows the current state of the sensing (Utility and Generator power) and last events that occurred. Also allows manual controlling of the transfer, starting, and stopping of the generator. Web app requires Wifi connection. Mine has a battery backup so it always statys connected.
 ![Controller UI](/assets/Controller-UI.png "Controller UI")
 
 Web endpoints can be found at: [/state](/src/SimpleWeb/StateController.cpp) and [/data](/src/SimpleWeb/DataController.cpp)
@@ -89,7 +89,7 @@ https://www.farnell.com/datasheets/73758.pdf
 * 194 is positive 12v DC from generator.
 * 23 Transfer, causes a transfer to utility when:
   * generator is running and connected to ATS.
-  * 0 ground -12v DC is connted to 23.
+  * 0 ground -12v DC is connected to 23.
   * +12v DC is supplied to 194.
   * I wasn't able to trigger the transfer via optocoupler. I could hear a small click in the ATS, but it never fully engaged. It only worked via relay.
 
