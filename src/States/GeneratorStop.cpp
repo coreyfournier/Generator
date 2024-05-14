@@ -28,29 +28,26 @@ namespace States
                 this->_context->StateChange(Event::Generator_Cooling_Down);
                 this->_context->Delay(DefaultGeneratorCoolDownTime);
 
+                this->_context->StateChange(Event::Generator_Stopping);
+
                 generator->Stop();                
 
-                //Don't try and stop if it isn't even on.
+                do
+                {
+                    this->_context->Delay(DefaultGeneratorTimeToWaitToStop);
+                    attemptsToStop++;
+
+                } while (generator->IsOn() && MaxAttemptsToStopGenerator < attemptsToStop);
+
                 if(generator->IsOn())
                 {
-                    this->_context->StateChange(Event::Generator_Stopping);
-
-                    do
-                    {
-                        this->_context->Delay(DefaultGeneratorTimeToWaitToStop);
-                        attemptsToStop++;
-                    } while (generator->IsOn() && MaxAttemptsToStopGenerator < attemptsToStop);
-
-                    if(generator->IsOn())
-                    {
-                        //If it fails to start, don't go back to idle preventing it from starting again.
-                        //Need to create a way to reset it.
-                        this->_context->StateChange(Event::Generator_Stop_Failed);
-                        return;
-                    }
-                    else
-                        this->_context->StateChange(Event::Generator_Off);
-                }                
+                    //If it fails to stop, don't go back to idle preventing it from starting again.
+                    //Need to create a way to reset it.
+                    this->_context->StateChange(Event::Generator_Stop_Failed);
+                    return;
+                }
+                else
+                    this->_context->StateChange(Event::Generator_Off);
             }
 
             this->_context->StateChange(Event::Idle);            

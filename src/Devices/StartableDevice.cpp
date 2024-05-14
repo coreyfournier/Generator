@@ -15,33 +15,53 @@ namespace Devices
         private:
         Pin* _start;        
         Pin* _stop;
+        bool _isMomentarySwitch;
+
+        void Toggle(Pin& pin, int momentaryDelay)
+        {           
+            if(this->_isMomentarySwitch)
+            {
+                this->_board->DigitalWrite(pin, true);
+                this->_board->TaskDelay(momentaryDelay);
+                this->_board->DigitalWrite(pin, false);
+            }
+            else
+            {
+                auto current = this->_board->DigitalRead(pin);
+
+                this->_board->DigitalWrite(pin, !current);
+            }
+        }
         
 
-        public:
-        StartableDevice(Pin* l1, Pin* l2, Pin* start, Pin* stop, IO::IBoardIO* board) : PowerDevice(l1, l2, board), _start(start), _stop(stop)
+        public: 
+        /// @brief 
+        /// @param l1 Sense voltage from leg 1 Required
+        /// @param l2 Sense voltage from leg 2 Not required
+        /// @param start Pin to start or stop the device
+        /// @param stop If null, then the start pin is used.
+        /// @param board Board to interface with
+        /// @param isMomentarySwitch Turning on or off the device is on, delayed, then off.
+        StartableDevice(Pin* l1, Pin* l2, Pin* start, Pin* stop, IO::IBoardIO* board, bool isMomentarySwitch) : PowerDevice(l1, l2, board), _start(start), _stop(stop), _isMomentarySwitch(isMomentarySwitch)
         {
             if(start != nullptr)
                 _pins.push_back(*start);
 
             if(stop != nullptr)
                 _pins.push_back(*stop);
-
         }
 
         void Start()
         {            
-            this->_board->DigitalWrite(*this->_start, true);
-            this->_board->TaskDelay(DefaultTimeToTriggerStart);
-            this->_board->DigitalWrite(*this->_start, false);
+            this->Toggle(*this->_start, DefaultTimeToTriggerStart);
         }
 
         void Stop()
         {            
-            // this->_board->DigitalWrite(*this->_stop, true);
-            // this->_board->Delay(1000);
-            // this->_board->DigitalWrite(*this->_stop, false);
-            //Use the same pin to stop it.
-            this->Start();
+            if(this->_stop == nullptr)
+                this->Toggle(*this->_start, DefaultTimeToTriggerStop);
+            else
+                this->Toggle(*this->_stop, DefaultTimeToTriggerStop);
         }
         
     };

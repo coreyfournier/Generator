@@ -54,12 +54,14 @@ IO::RtosQueue<States::ChangeMessage> stateQueue = IO::RtosQueue<States::ChangeMe
 IO::RtosQueue<States::PinChange> pinQueue = IO::RtosQueue<States::PinChange>();
 IO::RtosSerial serialOutput = IO::RtosSerial();
 
+//Generator device
 Devices::StartableDevice generator = Devices::StartableDevice(
   generatorL1OnSense,
   nullptr,
   genStart,
   genStop,
-  &board
+  &board,
+  GeneratorUsesMomentarySwitch
 );
 Devices::PowerDevice utility = Devices::PowerDevice(L1OnSense, &board);
 Devices::TransferSwitch transferSwitch = Devices::TransferSwitch(transfer, &board, &serialOutput);
