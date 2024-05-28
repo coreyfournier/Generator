@@ -23,6 +23,9 @@
 #include "Devices/StartableDevice.cpp"
 #include "Devices/TransferSwitch.cpp"
 
+#include <WiFiUdp.h>
+#include <Syslog.h>
+
 using namespace std;
 using namespace States;
 using namespace IO;
@@ -40,6 +43,11 @@ const int L1OnSenseGpio = 15;
 const int L2OnSenseGpio = 32;
 const int GeneratorOnSenseGpio = 14;
 
+// A UDP instance to let us send and receive packets over UDP
+WiFiUDP udpClient;
+
+// Create a new syslog instance with LOG_KERN facility
+Syslog syslog(udpClient, "nas.myfournier.com", 518, "genset.myfournier.com", "generator-control", LOG_INFO, SYSLOG_PROTO_BSD);
 
 WiFiServer server(WebServerPort);
 
@@ -52,7 +60,7 @@ Pin* genStop = new Pin(StopGPIO, false, "Stop Generator", PinRole::Stop);
 IO::RtosIO board = IO::RtosIO();
 IO::RtosQueue<States::ChangeMessage> stateQueue = IO::RtosQueue<States::ChangeMessage>();
 IO::RtosQueue<States::PinChange> pinQueue = IO::RtosQueue<States::PinChange>();
-IO::RtosSerial serialOutput = IO::RtosSerial();
+IO::RtosSerial serialOutput;
 
 //Generator device
 Devices::StartableDevice generator = Devices::StartableDevice(
@@ -66,14 +74,7 @@ Devices::StartableDevice generator = Devices::StartableDevice(
 Devices::PowerDevice utility = Devices::PowerDevice(L1OnSense, &board);
 Devices::TransferSwitch transferSwitch = Devices::TransferSwitch(transfer, &board, &serialOutput);
 
-Orchestration* view = new Orchestration( 
-  &utility,
-  &generator,
-  &transferSwitch,
-  &board,
-  &stateQueue,
-  &pinQueue,
-  &serialOutput);
+Orchestration* view;
 
 TaskHandle_t webSiteTask;
 TaskHandle_t sensorTask;
@@ -118,6 +119,17 @@ void setup() {
   board.SetPinMode(L1OnSense->gpio, INPUT);
   if(L2OnSense != nullptr) board.SetPinMode(L2OnSense->gpio, INPUT);
   board.SetPinMode(generatorL1OnSense->gpio, INPUT);
+
+  serialOutput = IO::RtosSerial(syslog);
+
+  view = new Orchestration( 
+    &utility,
+    &generator,
+    &transferSwitch,
+    &board,
+    &stateQueue,
+    &pinQueue,
+    &serialOutput);
     
 
   xTaskCreate(
@@ -195,7 +207,10 @@ void WebsiteTaskHandler(void * pvParameters)
     board.TaskDelay(5);
   }
 }
+int iteration = 0;
+void loop(){
 
-void loop(){}
+
+}
 
 #endif
