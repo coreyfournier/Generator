@@ -45,9 +45,19 @@ const int GeneratorOnSenseGpio = 14;
 
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP udpClient;
-
-// Create a new syslog instance with LOG_KERN facility
-Syslog syslog(udpClient, "nas.myfournier.com", 518, "genset.myfournier.com", "generator-control", LOG_INFO, SYSLOG_PROTO_BSD);
+//Enable the logging if the server is specified
+#ifdef LOG_SERVER_NAME
+  // Create a new syslog instance with LOG_KERN facility
+  Syslog* syslog = new Syslog(udpClient, 
+    LOG_SERVER_NAME, 
+    (uint16_t)LOG_SERVER_PORT, 
+    SYSLOG_NILVALUE, 
+    "generator-control", 
+    LOG_INFO, 
+    SYSLOG_PROTO_BSD);
+#else
+  Syslog* syslog = nullptr;
+#endif
 
 WiFiServer server(WebServerPort);
 

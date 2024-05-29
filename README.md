@@ -39,6 +39,11 @@ Set the following environment variables on your computer with the ssid and passw
 * ENV_WIFI_PW 
 * ENV_WIFI_SSID 
 
+## Logging
+Set the a server name to log messages to and the port. For more information about logging see [Syslog](https://github.com/arcao/Syslog). I used Synology's logging service to send messages to.
+  * ENV_LOG_SERVER_NAME
+  * ENV_LOG_SERVER_PORT
+
 Once the controller starts up it will print out the IP for the website. You can also identify it on your router. If you are here, you should know how to do this.
 
 ## Setting up to push code to the controller

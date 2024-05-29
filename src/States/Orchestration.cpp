@@ -255,7 +255,7 @@ namespace States
                     }                            
                                             
                     this->_serial->Println(IO::string_format(
-                        "Pin Change %s (%i) State=%i Timediff=%i Notify=%i CurrentEvent=%s\n", 
+                        "Pin Change '%s' (%i) State=%i Timediff=%i Notify=%i CurrentEvent=%s\n", 
                         changeMessage->pin->name.c_str(), 
                         changeMessage->pin->gpio, 
                         changeMessage->pin->state,

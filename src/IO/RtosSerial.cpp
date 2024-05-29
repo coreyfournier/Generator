@@ -25,7 +25,7 @@ namespace IO
 
         }
 
-        RtosSerial(Syslog& syslog) : _syslog(&syslog)
+        RtosSerial(Syslog* syslog) : _syslog(syslog)
         {            
             
         }

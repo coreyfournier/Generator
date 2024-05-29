@@ -13,13 +13,14 @@
             .state-on { background-color: #4CAF50;}
             label {width: 250px;}
             h1 {text-align: center;}
+            .refresh{cursor: pointer;}
         </style>
         <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js" integrity="sha256-lSjKY0/srUM9BE3dPm+c4fBo1dky2v27Gdjm2uoZaL0=" crossorigin="anonymous"></script>
     </head>
     <body>        
         <div class="container" id="container">
-            <h1 onclick="loadData();">Generator Control &#8635;</h1>
+            <h1 onclick="loadData();">Generator Control <span id="refresh" class="refresh">&#8635;</span></h1>
             <div class='col-sm'>
             <div class="panel panel-default" >
                 <div class="panel-heading">
@@ -54,9 +55,9 @@ $(document).ready(function(){
 
 function loadData()
 {
-    $.getJSON("/data", function(data){
-        $('#pin-body').empty();
+    $('#pin-body').empty();
 
+    $.getJSON("/data", function(data){       
         var button = "";
         data.pins.forEach((pin)=>{
             button += `   <label for='gpio_${pin.gpio}'>${pin.name} (${pin.gpio})</label>`;
@@ -80,10 +81,10 @@ function loadData()
 
 function loadStates()
 {
-    $.getJSON("/state", function(data){
-        $('#last-events-body').empty();
-        $('#state-body').empty();
+    $('#last-events-body').empty();
+    $('#state-body').empty();
 
+    $.getJSON("/state", function(data){
         data.lastEvents.forEach((event)=>{
             $("#last-events-body").append(`<div>${event}</div>\n`);
         });
