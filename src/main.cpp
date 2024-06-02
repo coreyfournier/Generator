@@ -51,7 +51,7 @@ WiFiUDP udpClient;
   Syslog* syslog = new Syslog(udpClient, 
     LOG_SERVER_NAME, 
     (uint16_t)LOG_SERVER_PORT, 
-    SYSLOG_NILVALUE, 
+    "genset", 
     "generator-control", 
     LOG_INFO, 
     SYSLOG_PROTO_BSD);
