@@ -37,8 +37,8 @@ const int WebServerPort = 80;
 // Assign output variables to GPIO pins
 //https://learn.adafruit.com/assets/111179
 const int TransferGPIO = 12;
-const int StartGPIO = 27; //A10 
-const int StopGPIO = 33; //A9 AMessage
+const int StartGPIO = 27;
+const int StopGPIO = 27; 
 const int L1OnSenseGpio = 15;
 const int L2OnSenseGpio = 32;
 const int GeneratorOnSenseGpio = 14;
