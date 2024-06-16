@@ -1,6 +1,7 @@
 #ifndef PIO_UNIT_TESTING
 
 #pragma once
+#include "ISerial.h"
 #include "IQueue.h"
 #include "Arduino.h"
 #include "States/ChangeMessage.cpp"
@@ -12,18 +13,23 @@ namespace IO
     {
         private:
         QueueHandle_t _pinQueueChange;
+        IO::ISerial* _serial;
 
         public:
         /// @brief 
+        /// @param serial serial writer for debugging
         /// @param queueSize How many items the queue can hold
-        RtosQueue(int queueSize = 10)
+        RtosQueue(IO::ISerial* serial, int queueSize = 10) : _serial(serial)
         {
             this->_pinQueueChange = xQueueCreate(queueSize, sizeof(T*)); 
         }
 
         void QueueMessage(T* cm)
         {
-            xQueueSendToBackFromISR(this->_pinQueueChange, &cm, NULL);
+            if(xQueueIsQueueFullFromISR(this->_pinQueueChange))
+                this->_serial->Println("Queue is full, ignoring message");
+            else
+                xQueueSendToBackFromISR(this->_pinQueueChange, &cm, NULL);
         }
 
         T* BlockAndDequeue()

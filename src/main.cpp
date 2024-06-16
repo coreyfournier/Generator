@@ -17,11 +17,13 @@
 #include "IO/RtosIO.cpp"
 #include "IO/RtosQueue.cpp"
 #include "IO/RtosSerial.cpp"
+#include "IO/BoardTemp.cpp"
 #include "States/ChangeMessage.cpp"
 #include "States/PinChange.cpp"
 #include "Devices/PowerDevice.cpp"
 #include "Devices/StartableDevice.cpp"
 #include "Devices/TransferSwitch.cpp"
+
 
 #include <WiFiUdp.h>
 #include <Syslog.h>
@@ -68,9 +70,10 @@ Pin* transfer = new Pin(TransferGPIO, false, "Transfer", PinRole::Transfer);
 Pin* genStart = new Pin(StartGPIO, false, "Start Generator", PinRole::Start);
 Pin* genStop = new Pin(StopGPIO, false, "Stop Generator", PinRole::Stop);
 IO::RtosIO board = IO::RtosIO();
-IO::RtosQueue<States::ChangeMessage> stateQueue = IO::RtosQueue<States::ChangeMessage>();
-IO::RtosQueue<States::PinChange> pinQueue = IO::RtosQueue<States::PinChange>();
-IO::RtosSerial serialOutput;
+IO::RtosSerial serialOutput = IO::RtosSerial(syslog);
+IO::RtosQueue<States::ChangeMessage> stateQueue = IO::RtosQueue<States::ChangeMessage>(&serialOutput);
+IO::RtosQueue<States::PinChange> pinQueue = IO::RtosQueue<States::PinChange>(&serialOutput);
+IO::BoardTemp boardTemp = IO::BoardTemp();
 
 //Generator device
 Devices::StartableDevice generator = Devices::StartableDevice(
@@ -116,11 +119,12 @@ void setup() {
     }
     // Print local IP address and start web server
     Serial.println("");
-    Serial.println("WiFi connected.");
+    serialOutput.Println("WiFi connected.");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
     server.begin();  
   }
+  
 
   /*Configure all of the GPIO pins*/
   board.SetPinMode(TransferGPIO, OUTPUT, false);
@@ -130,7 +134,6 @@ void setup() {
   if(L2OnSense != nullptr) board.SetPinMode(L2OnSense->gpio, INPUT);
   board.SetPinMode(generatorL1OnSense->gpio, INPUT);
 
-  serialOutput = IO::RtosSerial(syslog);
 
   view = new Orchestration( 
     &utility,
@@ -179,6 +182,10 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(L1OnSense->gpio), L1SenseChange, CHANGE);
   if(L2OnSense != nullptr)
     attachInterrupt(digitalPinToInterrupt(L2OnSense->gpio), L2SenseChange, CHANGE);  
+
+  /** */
+
+  boardTemp.Setup();
 }
 
 void generatorSenseChange()
@@ -218,9 +225,17 @@ void WebsiteTaskHandler(void * pvParameters)
   }
 }
 int iteration = 0;
-void loop(){
 
+
+
+void loop(){
+  serialOutput.Println(IO::string_format("readTemp1=%.1f" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1())));
+
+  serialOutput.Println(IO::string_format("readTemp2=%.1f" , boardTemp.ToFahrenheit(boardTemp.ReadTemp2())));
+  
+  delay(10000);
 
 }
+
 
 #endif
