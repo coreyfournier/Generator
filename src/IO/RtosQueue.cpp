@@ -26,10 +26,7 @@ namespace IO
 
         void QueueMessage(T* cm)
         {
-            if(xQueueIsQueueFullFromISR(this->_pinQueueChange))
-                this->_serial->Println("Queue is full, ignoring message");
-            else
-                xQueueSendToBackFromISR(this->_pinQueueChange, &cm, NULL);
+            xQueueSendToBackFromISR(this->_pinQueueChange, &cm, NULL);
         }
 
         T* BlockAndDequeue()

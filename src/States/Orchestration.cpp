@@ -181,7 +181,8 @@ namespace States
             this->_stateMap.insert(StatePair(Event::Disabled, new States::Disabled(this)));
             
             this->SetDevices();
-            this->StateChange(Event::Disabled);        
+            //What is the first state. Set disabled to prevent any automation.
+            this->StateChange(Event::Idle);        
         }
 
         void SetDevices()

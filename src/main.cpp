@@ -44,24 +44,15 @@ const int StopGPIO = 27;
 const int L1OnSenseGpio = 15;
 const int L2OnSenseGpio = 32;
 const int GeneratorOnSenseGpio = 14;
+int led = LED_BUILTIN;
 
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP udpClient;
-//Enable the logging if the server is specified
-#ifdef LOG_SERVER_NAME
-  // Create a new syslog instance with LOG_KERN facility
-  Syslog* syslog = new Syslog(udpClient, 
-    LOG_SERVER_NAME, 
-    (uint16_t)LOG_SERVER_PORT, 
-    "genset", 
-    "generator-control", 
-    LOG_INFO, 
-    SYSLOG_PROTO_BSD);
-#else
-  Syslog* syslog = nullptr;
-#endif
+Syslog* syslog = nullptr;
 
 WiFiServer server(WebServerPort);
+
+
 
 Pin* L1OnSense = new Pin(L1OnSenseGpio, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
 Pin* L2OnSense = nullptr; //Pin(L2OnSenseGpio, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
@@ -72,7 +63,7 @@ Pin* genStop = new Pin(StopGPIO, false, "Stop Generator", PinRole::Stop);
 IO::RtosIO board = IO::RtosIO();
 IO::RtosSerial serialOutput = IO::RtosSerial(syslog);
 IO::RtosQueue<States::ChangeMessage> stateQueue = IO::RtosQueue<States::ChangeMessage>(&serialOutput);
-IO::RtosQueue<States::PinChange> pinQueue = IO::RtosQueue<States::PinChange>(&serialOutput);
+IO::RtosQueue<States::PinChange> pinQueue = IO::RtosQueue<States::PinChange>(&serialOutput, 30);
 IO::BoardTemp boardTemp = IO::BoardTemp();
 
 //Generator device
@@ -100,6 +91,18 @@ void L2SenseChange();
 
 void setup() {
   Serial.begin(115200);
+
+  //Enable the logging if the server is specified
+  #ifdef LOG_SERVER_NAME
+    // Create a new syslog instance with LOG_KERN facility
+    syslog = new Syslog(udpClient, 
+      LOG_SERVER_NAME, 
+      (uint16_t)LOG_SERVER_PORT, 
+      "genset", 
+      "generator-control", 
+      LOG_INFO, 
+      SYSLOG_PROTO_BSD);
+  #endif
   
   //mount the file system
   SPIFFS.begin(true);
@@ -156,25 +159,25 @@ void setup() {
   
   delay(500);
 
-  xTaskCreatePinnedToCore(
+  xTaskCreate(
         /* Task function. */
           [](void *params){ view->WaitAndListenForPinChanges(); },
           "Interupt Task Handler",     /* name of task. */
           10000,       /* Stack size of task */
           NULL,
-          2,           /* priority of the task */
-          NULL,      /* Task handle to keep track of created task */
-          1);          /* pin task to core 1 */ 
+          3,           /* priority of the task */
+          NULL      /* Task handle to keep track of created task */
+          );
    
-  xTaskCreatePinnedToCore(
+  xTaskCreate(
         /* Task function. */
           [](void *params){ view->WaitAndListenForStateChanges(); },
           "State Task Handler",     /* name of task. */
           10000,       /* Stack size of task */
           NULL,
-          3,           /* priority of the task */
-          NULL,      /* Task handle to keep track of created task */
-          1);          /* pin task to core 1 */ 
+          2,           /* Make sure we can handle a flood of tasks faster than they can be produced */
+          NULL      /* Task handle to keep track of created task */
+          );
 
 
   //Listen for the state changes
@@ -183,7 +186,8 @@ void setup() {
   if(L2OnSense != nullptr)
     attachInterrupt(digitalPinToInterrupt(L2OnSense->gpio), L2SenseChange, CHANGE);  
 
-  /** */
+  // set LED to be an output pin
+  pinMode(led, OUTPUT);
 
   boardTemp.Setup();
 }
@@ -224,18 +228,18 @@ void WebsiteTaskHandler(void * pvParameters)
     board.TaskDelay(5);
   }
 }
-int iteration = 0;
-
-
 
 void loop(){
-  serialOutput.Println(IO::string_format("readTemp1=%.1f" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1())));
-
-  serialOutput.Println(IO::string_format("readTemp2=%.1f" , boardTemp.ToFahrenheit(boardTemp.ReadTemp2())));
   
-  delay(10000);
+  serialOutput.Println(IO::string_format("readTemp1=%.1f readTemp2=%.1f" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1()), boardTemp.ToFahrenheit(boardTemp.ReadTemp2())));
 
+  for(int i = 0; i < 12; i++)
+  {
+    //Blink the LED to let me know it's still running
+    digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
+    delay(1000); 
+    digitalWrite(led, LOW);     
+    delay(500); 
+  }
 }
-
-
 #endif
