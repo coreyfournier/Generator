@@ -71,6 +71,7 @@ namespace IO
 
         float ReadTemp2() {
             uint64_t value = rtc_time_get();
+            delay(100);
             value = (rtc_time_get() - value);
 
             return ((float)value*10.0 - M2_CALPOINT1_RAW) * (M2_CALPOINT2_CELSIUS - M2_CALPOINT1_CELSIUS) / (M2_CALPOINT2_RAW - M2_CALPOINT1_RAW) + M2_CALPOINT1_CELSIUS;
