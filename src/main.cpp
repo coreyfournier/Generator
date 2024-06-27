@@ -52,33 +52,23 @@ Syslog* syslog = nullptr;
 
 WiFiServer server(WebServerPort);
 
-
-
 Pin* L1OnSense = new Pin(L1OnSenseGpio, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
 Pin* L2OnSense = nullptr; //Pin(L2OnSenseGpio, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
 Pin* generatorL1OnSense = new Pin(GeneratorOnSenseGpio, false, "Generator on/off", true, PinRole::GeneratorOnL1);
 Pin* transfer = new Pin(TransferGPIO, false, "Transfer", PinRole::Transfer);
 Pin* genStart = new Pin(StartGPIO, false, "Start Generator", PinRole::Start);
 Pin* genStop = new Pin(StopGPIO, false, "Stop Generator", PinRole::Stop);
-IO::RtosIO board = IO::RtosIO();
-IO::RtosSerial serialOutput = IO::RtosSerial(syslog);
-IO::RtosQueue<States::ChangeMessage> stateQueue = IO::RtosQueue<States::ChangeMessage>(&serialOutput);
-IO::RtosQueue<States::PinChange> pinQueue = IO::RtosQueue<States::PinChange>(&serialOutput, 30);
+IO::RtosIO* board = new IO::RtosIO();
 IO::BoardTemp boardTemp = IO::BoardTemp();
-
-//Generator device
-Devices::StartableDevice generator = Devices::StartableDevice(
-  generatorL1OnSense,
-  nullptr,
-  genStart,
-  genStop,
-  &board,
-  GeneratorUsesMomentarySwitch
-);
-Devices::PowerDevice utility = Devices::PowerDevice(L1OnSense, &board);
-Devices::TransferSwitch transferSwitch = Devices::TransferSwitch(transfer, &board, &serialOutput);
-
+IO::RtosSerial* serialOutput = nullptr;
 Orchestration* view;
+IO::RtosQueue<States::ChangeMessage>* stateQueue;
+IO::RtosQueue<States::PinChange>* pinQueue;
+//Generator device
+Devices::StartableDevice* generator;
+Devices::PowerDevice* utility;
+Devices::TransferSwitch* transferSwitch;
+
 
 TaskHandle_t webSiteTask;
 TaskHandle_t sensorTask;
@@ -103,6 +93,10 @@ void setup() {
       LOG_INFO, 
       SYSLOG_PROTO_BSD);
   #endif
+
+  serialOutput = new IO::RtosSerial(syslog);
+  stateQueue = new IO::RtosQueue<States::ChangeMessage>(serialOutput);
+  pinQueue = new IO::RtosQueue<States::PinChange>(serialOutput, 30);
   
   //mount the file system
   SPIFFS.begin(true);
@@ -121,32 +115,42 @@ void setup() {
       Serial.print(".");
     }
     // Print local IP address and start web server
-    Serial.println("");
-    serialOutput.Println("WiFi connected.");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
+    serialOutput->Println("");
+    serialOutput->Println("WiFi connected.");
+    serialOutput->Println(IO::string_format("IP address: ", WiFi.localIP()));
     server.begin();  
   }
   
 
   /*Configure all of the GPIO pins*/
-  board.SetPinMode(TransferGPIO, OUTPUT, false);
-  board.SetPinMode(StartGPIO, OUTPUT, false);
-  board.SetPinMode(StopGPIO, OUTPUT, false);
-  board.SetPinMode(L1OnSense->gpio, INPUT);
-  if(L2OnSense != nullptr) board.SetPinMode(L2OnSense->gpio, INPUT);
-  board.SetPinMode(generatorL1OnSense->gpio, INPUT);
+  board->SetPinMode(TransferGPIO, OUTPUT, false);
+  board->SetPinMode(StartGPIO, OUTPUT, false);
+  board->SetPinMode(StopGPIO, OUTPUT, false);
+  board->SetPinMode(L1OnSense->gpio, INPUT);
+  if(L2OnSense != nullptr) 
+    board->SetPinMode(L2OnSense->gpio, INPUT);
+  board->SetPinMode(generatorL1OnSense->gpio, INPUT);
 
+  //Generator device
+  generator = new Devices::StartableDevice(
+    generatorL1OnSense,
+    nullptr,
+    genStart,
+    genStop,
+    board,
+    GeneratorUsesMomentarySwitch
+  );
+  utility = new Devices::PowerDevice(L1OnSense, board);
+  transferSwitch = new Devices::TransferSwitch(transfer, board, serialOutput);
 
   view = new Orchestration( 
-    &utility,
-    &generator,
-    &transferSwitch,
-    &board,
-    &stateQueue,
-    &pinQueue,
-    &serialOutput);
-    
+    utility,
+    generator,
+    transferSwitch,
+    board,
+    stateQueue,
+    pinQueue,
+    serialOutput);    
 
   xTaskCreate(
         WebsiteTaskHandler,   /* Task function. */
@@ -225,13 +229,13 @@ void WebsiteTaskHandler(void * pvParameters)
   {
     router.Check();
     //With out the delay it crashes???? idk
-    board.TaskDelay(5);
+    board->TaskDelay(5);
   }
 }
 
 void loop(){
   
-  serialOutput.Println(IO::string_format("readTemp1=%.1f readTemp2=%.1f" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1()), boardTemp.ToFahrenheit(boardTemp.ReadTemp2())));
+  serialOutput->Println(IO::string_format("readTemp1=%.1f readTemp2=%.1f" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1()), boardTemp.ToFahrenheit(boardTemp.ReadTemp2())));
 
   for(int i = 0; i < 12; i++)
   {
