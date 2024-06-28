@@ -78,6 +78,20 @@ void generatorSenseChange();
 void L1SenseChange();
 void L2SenseChange();
 
+void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info){
+  //Solid red when no longer connected
+  digitalWrite(led, HIGH);
+
+  Serial.println("Disconnected from WiFi access point");
+  Serial.print("WiFi lost connection. Reason: ");
+  Serial.println(info.wifi_sta_disconnected.reason);
+  Serial.println("Trying to Reconnect");
+  WiFi.begin(ssid, password);
+}
+
+void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info){
+  Serial.println("Connected to AP successfully!");
+}
 
 void setup() {
   Serial.begin(115200);
@@ -105,6 +119,9 @@ void setup() {
     Serial.print("Wifi SSID not provided, will not connect or run the webserver.");
   else
   {
+    WiFi.onEvent(WiFiStationDisconnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+    WiFi.onEvent(WiFiStationConnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
+
     // Connect to Wi-Fi network with SSID and password
     Serial.print("Connecting to ");
     Serial.println(ssid);
@@ -234,16 +251,20 @@ void WebsiteTaskHandler(void * pvParameters)
 }
 
 void loop(){
+  long rssi = WiFi.RSSI();
+  serialOutput->Println(IO::string_format("readTemp1=%.1f readTemp2=%.1f wifiSignal=%i" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1()), boardTemp.ToFahrenheit(boardTemp.ReadTemp2()), rssi));
   
-  serialOutput->Println(IO::string_format("readTemp1=%.1f readTemp2=%.1f" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1()), boardTemp.ToFahrenheit(boardTemp.ReadTemp2())));
-
+  //Blink when connected to wifi
   for(int i = 0; i < 12; i++)
   {
-    //Blink the LED to let me know it's still running
-    digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay(1000); 
-    digitalWrite(led, LOW);     
-    delay(500); 
-  }
+    if(WiFi.status() == WL_CONNECTED)
+    {
+      //Blink the LED to let me know it's still running
+      digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
+      delay(1000); 
+      digitalWrite(led, LOW);     
+      delay(500); 
+    }
+  }  
 }
 #endif
