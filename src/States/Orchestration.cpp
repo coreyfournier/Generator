@@ -254,24 +254,30 @@ namespace States
                         notifyChange = (changeMessage->pin->state != pinState);
                         changeMessage->pin->state = pinState;
                     }                            
-                                            
-                    this->_serial->Println(IO::string_format(
-                        "Pin Change '%s' (%i) State=%i Timediff=%i Notify=%i CurrentEvent=%s\n", 
-                        changeMessage->pin->name.c_str(), 
-                        changeMessage->pin->gpio, 
-                        changeMessage->pin->state,
-                        timeDiff,
-                        notifyChange,
-                        IEvent::ToName(this->_currentEvent).c_str()));         
-
-                    //Only notify the change if it's idle. Each state knows to check for the generator and utility
-                    if(notifyChange && (this->_stateMap[Event::Idle] == this->_currentState))
+                        
+                    if(notifyChange)
                     {
-                        if(changeMessage->pin->role == PinRole::UtilityOnL1 || changeMessage->pin->role == PinRole::UtilityOnL2)
-                            if(changeMessage->pin->state)
-                                this->StateChange(Event::Utility_On);
-                            else
-                                this->StateChange(Event::Utility_Off);
+                        this->_serial->Println(IO::string_format(
+                            "Pin Change '%s' (%i) State=%i Timediff=%i Notify=%i CurrentEvent=%s\n", 
+                            changeMessage->pin->name.c_str(), 
+                            changeMessage->pin->gpio, 
+                            changeMessage->pin->state,
+                            timeDiff,
+                            notifyChange,
+                            IEvent::ToName(this->_currentEvent).c_str()));
+
+                        //Only notify the change if it's idle. Each state knows to check for the generator and utility
+                        if(this->_stateMap[Event::Idle] == this->_currentState)
+                        {
+                            //If the utility pin changes, then notify the change when it's idle
+                            if(changeMessage->pin->role == PinRole::UtilityOnL1 || changeMessage->pin->role == PinRole::UtilityOnL2)
+                            {
+                                if(changeMessage->pin->state)
+                                    this->StateChange(Event::Utility_On);
+                                else
+                                    this->StateChange(Event::Utility_Off);
+                            }
+                        }
                     }
                 }
                 else

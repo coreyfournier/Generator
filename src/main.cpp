@@ -255,7 +255,7 @@ void loop(){
   serialOutput->Println(IO::string_format("readTemp1=%.1f readTemp2=%.1f wifiSignal=%i" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1()), boardTemp.ToFahrenheit(boardTemp.ReadTemp2()), rssi));
   
   //Blink when connected to wifi
-  for(int i = 0; i < 12; i++)
+  for(int i = 0; i < 2000; i++)
   {
     if(WiFi.status() == WL_CONNECTED)
     {
