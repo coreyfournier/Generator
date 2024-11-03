@@ -62,6 +62,7 @@ int main()
     //delay(2000); // service delay
     UNITY_BEGIN();
 
+    RUN_TEST(test_simple_queue);
     RUN_TEST(test_orchestration);
     
     RUN_TEST(test_string_substring);
