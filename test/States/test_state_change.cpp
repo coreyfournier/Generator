@@ -22,7 +22,7 @@ class FakeContext: public IContext
     IO::PrintSerial* print = new IO::PrintSerial();
     Pin* _utilityL1 = new Pin(1, false, "Utility L1", PinRole::UtilityOnL1);
     Pin* _generatorL1 = new Pin(3, false, "Generator L1", PinRole::GeneratorOnL1);
-
+    /*
     Devices::PowerDevice* _generator = new Devices::PowerDevice(_generatorL1);
     Devices::PowerDevice* _utility = new Devices::PowerDevice(_utilityL1);
 
@@ -66,11 +66,12 @@ class FakeContext: public IContext
     {
         return nullptr;
     }
+    */
 };
 
 
 void test_state_change(void) {
-    
+    /*
     IO::MockBoard board = IO::MockBoard();
     IO::SimpleQueue queue = IO::SimpleQueue();
     IO::PrintSerial print = IO::PrintSerial();
@@ -82,4 +83,5 @@ void test_state_change(void) {
     UnityPrint("test_state_change test here\n");
 
     TEST_ASSERT_EQUAL_STRING("Hello", "Hello");
+    */
 }

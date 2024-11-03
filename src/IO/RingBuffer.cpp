@@ -31,7 +31,10 @@ namespace IO
 
             //It's at the max so take one off the front
             if(this->_buffer.size() >= this->_maxSize)
+            {
+                auto last = this->_buffer.end();                
                 this->_buffer.pop_back();    
+            }
         }
     };
     

@@ -11,7 +11,6 @@
 #include "SimpleWeb/IndexController.cpp"
 #include "SimpleWeb/Router.h"
 #include "SimpleWeb/IController.h"
-#include "IO/PowerState.h"
 #include "IO/Pin.cpp"
 #include "States/Orchestration.cpp"
 #include "IO/RtosIO.cpp"
@@ -132,9 +131,8 @@ void setup() {
       Serial.print(".");
     }
     // Print local IP address and start web server
-    serialOutput->Println("");
-    serialOutput->Println("WiFi connected.");
-    serialOutput->Println(IO::string_format("IP address: ", WiFi.localIP()));
+    serialOutput->Println("\n WiFi connected.");
+    serialOutput->Println(IO::string_format("IP address: %s", WiFi.localIP().toString().c_str()));
     server.begin();  
   }
   
@@ -167,7 +165,9 @@ void setup() {
     board,
     stateQueue,
     pinQueue,
-    serialOutput);    
+    serialOutput,
+    //Upon startup, it will fire the automation tasks.
+    States::Event::Initalize);    
 
   xTaskCreate(
         WebsiteTaskHandler,   /* Task function. */

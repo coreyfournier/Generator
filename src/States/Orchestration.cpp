@@ -54,6 +54,7 @@ namespace States
         IO::ISerial* _serial;
         IO::IBoardIO* _board;
         IO::RingBuffer<Event>* _lastEvents  = new IO::RingBuffer<Event>(20);
+        Event _initialState;
 
         /// @brief Creates a comprehensive list of all of the pins used.
         /// @param pinList 
@@ -74,6 +75,15 @@ namespace States
         }
             
         public:
+        /// @brief 
+        /// @param utility 
+        /// @param generator 
+        /// @param transferSwitch 
+        /// @param board 
+        /// @param stateQueue 
+        /// @param pinQueue 
+        /// @param serial 
+        /// @param initalState //What is the first state. Set disabled to prevent any automation.
         Orchestration(
             Devices::PowerDevice* utility,
             Devices::StartableDevice* generator,
@@ -81,7 +91,8 @@ namespace States
             IO::IBoardIO* board,
             IO::IQueue<States::ChangeMessage>* stateQueue,
             IO::IQueue<States::PinChange>* pinQueue,
-            IO::ISerial* serial
+            IO::ISerial* serial,
+            Event initalState
         ) :  
             _utility(utility),
             _generator(generator),
@@ -89,7 +100,8 @@ namespace States
             _board(board),
             _stateQueueChange(stateQueue),
             _pinQueueChange(pinQueue),
-            _serial(serial)            
+            _serial(serial),        
+            _initialState(initalState)
         {                    
             
         }
@@ -163,26 +175,20 @@ namespace States
         {   
             this->_currentEvent = Event::Initalize;
 
-            auto utilityOn = new UtilityOn(this);        
-            auto utilityOff = new UtilityOff(this);
-            auto generatorStart = new GeneratorStart(this);
-            auto generatorOn = new GeneratorOn(this);
-            auto transferToGenerator = new TransferToGenerator(this);
-
             this->_stateMap.insert(StatePair(Event::Initalize, new States::Initalize(this)));
-            this->_stateMap.insert(StatePair(Event::Utility_On, utilityOn));            
-            this->_stateMap.insert(StatePair(Event::Utility_Off, utilityOff));
-            this->_stateMap.insert(StatePair(Event::Generator_Start, generatorStart));
+            this->_stateMap.insert(StatePair(Event::Utility_On, new UtilityOn(this)));            
+            this->_stateMap.insert(StatePair(Event::Utility_Off, new UtilityOff(this)));
+            this->_stateMap.insert(StatePair(Event::Generator_Start, new GeneratorStart(this)));
             this->_stateMap.insert(StatePair(Event::Generator_Stop, new GeneratorStop(this)));
-            this->_stateMap.insert(StatePair(Event::Generator_On, generatorOn));
-            this->_stateMap.insert(StatePair(Event::Transfer_To_Generator, transferToGenerator));
+            this->_stateMap.insert(StatePair(Event::Generator_On, new GeneratorOn(this)));
+            this->_stateMap.insert(StatePair(Event::Transfer_To_Generator, new TransferToGenerator(this)));
             this->_stateMap.insert(StatePair(Event::Transfer_To_Utility, new TransferToUtility(this)));
             this->_stateMap.insert(StatePair(Event::Idle, new States::Idle(this)));
             this->_stateMap.insert(StatePair(Event::Disabled, new States::Disabled(this)));
             
             this->SetDevices();
             //What is the first state. Set disabled to prevent any automation.
-            this->StateChange(Event::Idle);        
+            this->StateChange(this->_initialState);        
         }
 
         void SetDevices()

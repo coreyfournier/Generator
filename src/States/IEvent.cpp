@@ -48,7 +48,7 @@ namespace States
         static string ToName(Event e)
         {
             static string _enumStrings[22] = { 
-
+                //State to kick off the process of checking the states of the utility and generator.
                 "Initalize",
                 //Startup phases
                 "Utility Off",
@@ -75,7 +75,9 @@ namespace States
 
                 //Error states
                 "Start Failure",
+                //State when nothing is to be checked on start up or no states are being run
                 "Idle",
+                //Don't run any states
                 "Disabled"
             };
             
