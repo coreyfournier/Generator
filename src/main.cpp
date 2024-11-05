@@ -78,15 +78,10 @@ void L1SenseChange();
 void L2SenseChange();
 
 void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info){
-  //Solid red when no longer connected
-  digitalWrite(led, HIGH);
-
   Serial.println("Disconnected from WiFi access point");
   Serial.print("WiFi lost connection. Reason: ");
   Serial.println(info.wifi_sta_disconnected.reason);
-  Serial.println("Trying to Reconnect");
-  WiFi.begin(ssid, password);
-}
+ }
 
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info){
   Serial.println("Connected to AP successfully!");
@@ -257,13 +252,22 @@ void loop(){
   //Blink when connected to wifi
   for(int i = 0; i < 2000; i++)
   {
-    if(WiFi.status() == WL_CONNECTED)
+    delay(500); 
+    auto status = WiFi.status();
+
+    if( status== WL_CONNECTED)
     {
       //Blink the LED to let me know it's still running
-      digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
-      delay(1000); 
+      
+      delay(500); 
       digitalWrite(led, LOW);     
       delay(500); 
+    }
+    else if(status == WL_CONNECTION_LOST  || status == WL_DISCONNECTED)
+    {
+      digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
+      WiFi.disconnect(true);
+      WiFi.begin(ssid, password); 
     }
   }  
 }
