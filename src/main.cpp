@@ -3,7 +3,7 @@
 #define ST(A) #A
 #define STR(A) ST(A)
 
-#include <WiFi.h>
+
 #include <stdio.h>
 #include "Arduino.h"
 #include "SimpleWeb/DataController.cpp"
@@ -22,6 +22,7 @@
 #include "Devices/PowerDevice.cpp"
 #include "Devices/StartableDevice.cpp"
 #include "Devices/TransferSwitch.cpp"
+#include "IO/WifiHelper.cpp"
 
 
 #include <WiFiUdp.h>
@@ -32,8 +33,8 @@ using namespace States;
 using namespace IO;
 
 // Replace with your network credentials set in the environment
-const char* ssid = WIFI_SSID;
-const char* password = WIFI_PASSWORD;
+char* ssid = WIFI_SSID;
+char* password = WIFI_PASSWORD;
 const int WebServerPort = 80;
 // Assign output variables to GPIO pins
 //https://learn.adafruit.com/assets/111179
@@ -67,7 +68,7 @@ IO::RtosQueue<States::PinChange>* pinQueue;
 Devices::StartableDevice* generator;
 Devices::PowerDevice* utility;
 Devices::TransferSwitch* transferSwitch;
-
+WifiHelper* wifiHelper = nullptr;
 
 TaskHandle_t webSiteTask;
 TaskHandle_t sensorTask;
@@ -77,15 +78,6 @@ void generatorSenseChange();
 void L1SenseChange();
 void L2SenseChange();
 
-void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info){
-  Serial.println("Disconnected from WiFi access point");
-  Serial.print("WiFi lost connection. Reason: ");
-  Serial.println(info.wifi_sta_disconnected.reason);
- }
-
-void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info){
-  Serial.println("Connected to AP successfully!");
-}
 
 void setup() {
   Serial.begin(115200);
@@ -113,22 +105,9 @@ void setup() {
     Serial.print("Wifi SSID not provided, will not connect or run the webserver.");
   else
   {
-    WiFi.onEvent(WiFiStationDisconnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-    WiFi.onEvent(WiFiStationConnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
-
-    // Connect to Wi-Fi network with SSID and password
-    Serial.print("Connecting to ");
-    Serial.println(ssid);
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) 
-    {
-      delay(500);
-      Serial.print(".");
-    }
-    // Print local IP address and start web server
-    serialOutput->Println("\n WiFi connected.");
-    serialOutput->Println(IO::string_format("IP address: %s", WiFi.localIP().toString().c_str()));
-    server.begin();  
+    wifiHelper = new WifiHelper(ssid, password);
+    if(wifiHelper->Connect(true) == WL_CONNECTED)
+      server.begin();  
   }
   
 
@@ -249,26 +228,30 @@ void loop(){
   long rssi = WiFi.RSSI();
   serialOutput->Println(IO::string_format("readTemp1=%.1f readTemp2=%.1f wifiSignal=%i" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1()), boardTemp.ToFahrenheit(boardTemp.ReadTemp2()), rssi));
   
-  //Blink when connected to wifi
-  for(int i = 0; i < 2000; i++)
+  if(wifiHelper != nullptr)
   {
-    delay(500); 
-    auto status = WiFi.status();
+    //Blink when connected to wifi
+    for(int i = 0; i < 2000; i++)
+    {
+      delay(500); 
 
-    if( status== WL_CONNECTED)
-    {
-      //Blink the LED to let me know it's still running
-      
-      delay(500); 
-      digitalWrite(led, LOW);     
-      delay(500); 
-    }
-    else if(status == WL_CONNECTION_LOST  || status == WL_DISCONNECTED)
-    {
-      digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
-      WiFi.disconnect(true);
-      WiFi.begin(ssid, password); 
-    }
-  }  
+      auto status = wifiHelper->Status();
+
+      if(status == WL_CONNECTED)
+      {
+        //Blink the LED to let me know it's still running      
+        delay(500); 
+        digitalWrite(led, LOW);     
+        delay(500); 
+      }
+      //Reconnect the wifi if failed.
+      else if(status == WL_CONNECTION_LOST  || status == WL_DISCONNECTED)
+      {
+        digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
+        
+        wifiHelper->Connect(false); 
+      }
+    }  
+  }
 }
 #endif
