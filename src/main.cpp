@@ -105,7 +105,7 @@ void setup() {
     Serial.print("Wifi SSID not provided, will not connect or run the webserver.");
   else
   {
-    wifiHelper = new WifiHelper(ssid, password);
+    wifiHelper = new WifiHelper(ssid, password, serialOutput);
     if(wifiHelper->Connect(true) == WL_CONNECTED)
       server.begin();  
   }
@@ -243,6 +243,7 @@ void loop(){
         delay(500); 
         digitalWrite(led, LOW);     
         delay(500); 
+        digitalWrite(led, HIGH); 
       }
       //Reconnect the wifi if failed.
       else if(status == WL_CONNECTION_LOST  || status == WL_DISCONNECTED)
