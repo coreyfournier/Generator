@@ -34,24 +34,28 @@ namespace SimpleWeb
                     Serial.println(error.f_str());
 
                     doc["success"] = false;
-                    doc["message"] = error.f_str();                
+                    doc["message"] = error.f_str();
 
-                    // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-                    // and a content-type so the client knows what's coming, then a blank line:
+                    String body;
+                    serializeJson(doc, body);
+
                     client.println("HTTP/1.1 500 Internal Server Error");
                     client.println("Content-type:text/json");
                     client.println("Connection: close");
+                    client.print("Content-Length: ");
+                    client.println(body.length());
                     client.println();
+                    client.print(body);
                 }
                 else
                 {
-                    int gpio = doc["gpio"].as<int>();                         
+                    int gpio = doc["gpio"].as<int>();
                     Pin* foundPin = this->_view->FindByGpio(gpio);
 
                     if(foundPin == nullptr)
                     {
                         doc["success"] = false;
-                        doc["message"] = "Pin not found";    
+                        doc["message"] = "Pin not found";
                     }
                     else
                     {
@@ -67,26 +71,27 @@ namespace SimpleWeb
                         }
                         else
                         {
-                            this->_view->DigitalWrite(*foundPin, false);                            
+                            this->_view->DigitalWrite(*foundPin, false);
                         }
 
                         doc["state"] = foundPin->state;
                         doc["name"] = foundPin->name;
-                        doc["isReadOnly"] = foundPin->isReadOnly;                
+                        doc["isReadOnly"] = foundPin->isReadOnly;
 
                         foundPin->state = doc["state"].as<bool>();
                     }
-                   
 
-                    // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-                    // and a content-type so the client knows what's coming, then a blank line:
+                    String body;
+                    serializeJson(doc, body);
+
                     client.println("HTTP/1.1 200 OK");
                     client.println("Content-type:text/json");
                     client.println("Connection: close");
+                    client.print("Content-Length: ");
+                    client.println(body.length());
                     client.println();
-                }
-
-                serializeJson(doc, client);  
+                    client.print(body);
+                }  
 
                 return true;            
             }
@@ -95,13 +100,8 @@ namespace SimpleWeb
                 StaticJsonDocument<1400> doc;      
                 // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
                 // and a content-type so the client knows what's coming, then a blank line:
-                client.println("HTTP/1.1 200 OK");
-                client.println("Content-type:text/json");
-                client.println("Connection: close");
-                client.println(); 
-                
-                Serial.printf("data...");                
-              
+                Serial.printf("data...");
+
                 for(int i=0; i< this->_view->PinCount(); i++)
                 {
                     Pin pin = this->_view->GetPin(i);
@@ -110,9 +110,19 @@ namespace SimpleWeb
                     doc["pins"][i]["gpio"] = pin.gpio;
                     doc["pins"][i]["state"] = pin.state;
                     doc["pins"][i]["name"] = pin.name;
-                    doc["pins"][i]["isReadOnly"] = pin.isReadOnly;                
-                }                            
-                serializeJson(doc, client);
+                    doc["pins"][i]["isReadOnly"] = pin.isReadOnly;
+                }
+
+                String body;
+                serializeJson(doc, body);
+
+                client.println("HTTP/1.1 200 OK");
+                client.println("Content-type:text/json");
+                client.println("Connection: close");
+                client.print("Content-Length: ");
+                client.println(body.length());
+                client.println();
+                client.print(body);
 
                 return true;
             }
