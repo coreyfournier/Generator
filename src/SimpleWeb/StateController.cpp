@@ -35,40 +35,50 @@ namespace SimpleWeb
                     Serial.println(error.f_str());
 
                     doc["success"] = false;
-                    doc["message"] = error.f_str();                
+                    doc["message"] = error.f_str();
 
-                    // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-                    // and a content-type so the client knows what's coming, then a blank line:
+                    String body;
+                    serializeJson(doc, body);
+
                     client.println("HTTP/1.1 500 Internal Server Error");
                     client.println("Content-type:text/json");
                     client.println("Connection: close");
+                    client.print("Content-Length: ");
+                    client.println(body.length());
                     client.println();
+                    client.print(body);
                 }
                 else
-                {                    
-                    States::Event event = (States::Event)doc["eventId"].as<int>();         
-                    //User allowed states to change it to.                
+                {
+                    States::Event event = (States::Event)doc["eventId"].as<int>();
+                    //User allowed states to change it to.
                     if(event == States::Event::Initalize || event == States::Event::Disabled || event == States::Event::Idle)
                     {
                         this->_view->StateChange(event);
                         doc["success"] = true;
-                        doc["message"] = IO::string_format("Changed to state %s", States::IEvent::ToName(event).c_str());   
-                        
-                        client.println("HTTP/1.1 200 OK");
+                        doc["message"] = IO::string_format("Changed to state %s", States::IEvent::ToName(event).c_str());
                     }
                     else
                     {
-                        client.println("HTTP/1.1 500 Internal Server Error");
                         doc["success"] = false;
-                        doc["message"] = "State isn't allowed. Only Idle or Disabled";      
-                    }                   
-                    
+                        doc["message"] = "State isn't allowed. Only Idle or Disabled";
+                    }
+
+                    String body;
+                    serializeJson(doc, body);
+
+                    if(doc["success"].as<bool>())
+                        client.println("HTTP/1.1 200 OK");
+                    else
+                        client.println("HTTP/1.1 500 Internal Server Error");
+
                     client.println("Content-type:text/json");
                     client.println("Connection: close");
+                    client.print("Content-Length: ");
+                    client.println(body.length());
                     client.println();
-                }
-
-                serializeJson(doc, client);  
+                    client.print(body);
+                }  
 
                 return true;            
             }
@@ -77,30 +87,34 @@ namespace SimpleWeb
                 StaticJsonDocument<1400> doc;      
                 // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
                 // and a content-type so the client knows what's coming, then a blank line:
-                client.println("HTTP/1.1 200 OK");
-                client.println("Content-type:text/json");
-                client.println("Connection: close");
-                client.println(); 
-                
                 Serial.printf("data...");
                 //States the user can change it to
                 doc["disabledId"] = (int)States::Event::Disabled;
                 doc["enableId"] = (int)States::Event::Initalize;
                 doc["idleId"] = (int)States::Event::Idle;
-                
+
                 JsonObject currentState = doc.createNestedObject("current");
                 currentState["name"] = this->_view->GetStateName();
                 currentState["id"] = (int)this->_view->GetState();
-                
+
                 auto lastEvents = this->_view->GetLastEvents();
                 int i=0;
                 for (auto e = lastEvents.begin(); e != lastEvents.end(); ++e)
                 {
                     doc["lastEvents"][i] = States::IEvent::ToName(*e);
                     i++;
-                }              
-                           
-                serializeJson(doc, client);
+                }
+
+                String body;
+                serializeJson(doc, body);
+
+                client.println("HTTP/1.1 200 OK");
+                client.println("Content-type:text/json");
+                client.println("Connection: close");
+                client.print("Content-Length: ");
+                client.println(body.length());
+                client.println();
+                client.print(body);
 
                 return true;
             }
