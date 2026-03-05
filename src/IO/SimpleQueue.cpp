@@ -1,6 +1,6 @@
 #pragma once
 #include "IQueue.h"
-#include <mutex>
+#include <stdexcept>
 #include <queue>
 
 namespace IO
@@ -20,12 +20,20 @@ namespace IO
 
         T* BlockAndDequeue()
         {
+            if(this->_queue.empty())
+                throw std::runtime_error("Queue is empty");
+
             auto t = this->_queue.front();
             this->_queue.pop();
-            return t;         
+            return t;
+        }
+
+        bool IsEmpty()
+        {
+            return this->_queue.empty();
         }
 
     };
-    
+
 } // namespace IO
 

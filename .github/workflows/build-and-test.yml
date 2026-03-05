@@ -20,7 +20,7 @@ jobs:
         run: pip install platformio
 
       - name: Run native unit tests
-        run: pio test -e Native
+        run: pio test -e Native -v
 
   build-esp32:
     runs-on: ubuntu-latest

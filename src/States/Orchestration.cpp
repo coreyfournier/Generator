@@ -48,6 +48,8 @@ namespace States
         IState* _currentState = nullptr;
         /// @brief Current event for the current state. A state can have sub events.
         Event _currentEvent;
+        /// @brief Whether the current state has a DoAction pending (used by PeekNextEvent/ExecuteCurrentState).
+        bool _pendingAction = false;
         std::map<Event, IState*> _stateMap;
         typedef std::pair<Event, IState*> StatePair;
         typedef std::pair<uint32_t, int> GpioTimePair;
@@ -295,39 +297,108 @@ namespace States
             delete changeMessage;
         }
 
-        /// @brief Waits for pin change events and sets the pin values 
-        void WaitAndListenForStateChanges()
+        /// @brief Dequeues and processes a single state change message.
+        /// @return true if a message was processed, false if queue was empty.
+        bool ProcessOneStateChange()
         {
             ChangeMessage* changeMessage;
-
-            while(true)
-            {
-                //this->_serial->Println(IO::string_format("WaitAndListen loop"));
+            try {
                 changeMessage = this->_stateQueueChange->BlockAndDequeue();
-                this->_currentEvent = changeMessage->event;                
-                                    
-                this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));                                                                
+            } catch(...) {
+                return false;
+            }
 
-                if(this->_stateMap[changeMessage->event] != nullptr)
-                {
-                    this->_currentState = this->_stateMap[changeMessage->event];            
+            this->_currentEvent = changeMessage->event;
 
-                    this->_serial->Println(IO::string_format("Current State GetName(): '%s'", this->_currentState->GetName().c_str()));
-                    
-                    this->_currentState->DoAction();
-                }
-                else
-                {
-                    Event e = changeMessage->event;
-                    this->_serial->Println(IO::string_format(
-                        "No state map for '%s' (%i) this is probably a substate for the current state\n", 
-                        IEvent::ToName(e).c_str(), 
-                        e));                        
-                }
-                
+            this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));
+
+            if(this->_stateMap[changeMessage->event] != nullptr)
+            {
+                this->_currentState = this->_stateMap[changeMessage->event];
+
+                this->_serial->Println(IO::string_format("Current State GetName(): '%s'", this->_currentState->GetName().c_str()));
+
+                this->_currentState->DoAction();
+            }
+            else
+            {
+                Event e = changeMessage->event;
+                this->_serial->Println(IO::string_format(
+                    "No state map for '%s' (%i) this is probably a substate for the current state\n",
+                    IEvent::ToName(e).c_str(),
+                    e));
             }
 
             delete changeMessage;
+            return true;
+        }
+
+        /// @brief Dequeues the next message, updates current event, but does NOT
+        /// call DoAction. Use ExecuteCurrentState() after to run the action.
+        /// @param outEvent Populated with the dequeued event.
+        /// @return true if a message was dequeued, false if queue was empty.
+        bool PeekNextEvent(Event& outEvent)
+        {
+            ChangeMessage* changeMessage;
+            try {
+                changeMessage = this->_stateQueueChange->BlockAndDequeue();
+            } catch(...) {
+                return false;
+            }
+
+            outEvent = changeMessage->event;
+            this->_currentEvent = changeMessage->event;
+            this->_pendingAction = false;
+
+            this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));
+
+            if(this->_stateMap[changeMessage->event] != nullptr)
+            {
+                this->_currentState = this->_stateMap[changeMessage->event];
+                this->_pendingAction = true;
+            }
+            else
+            {
+                this->_serial->Println(IO::string_format(
+                    "No state map for '%s' (%i) this is probably a substate for the current state\n",
+                    IEvent::ToName(changeMessage->event).c_str(),
+                    (int)changeMessage->event));
+            }
+
+            delete changeMessage;
+            return true;
+        }
+
+        /// @brief Executes the current state's DoAction if there is a pending action.
+        void ExecuteCurrentState()
+        {
+            if(this->_pendingAction && this->_currentState != nullptr)
+            {
+                this->_serial->Println(IO::string_format("Current State GetName(): '%s'", this->_currentState->GetName().c_str()));
+                this->_currentState->DoAction();
+                this->_pendingAction = false;
+            }
+        }
+
+        /// @brief Drains all queued state changes, processing each one.
+        /// @return The last event that was processed.
+        Event DrainAllStateChanges()
+        {
+            Event lastEvent = this->_currentEvent;
+            while(ProcessOneStateChange())
+            {
+                lastEvent = this->_currentEvent;
+            }
+            return lastEvent;
+        }
+
+        /// @brief Waits for pin change events and sets the pin values
+        void WaitAndListenForStateChanges()
+        {
+            while(true)
+            {
+                ProcessOneStateChange();
+            }
         }    
         
         void DigitalWrite(Pin& pin, bool value)
