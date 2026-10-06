@@ -38,3 +38,22 @@ const int DefaultTimeToTriggerStop = 1000;
 /// @brief denotes the generator on and off is momentary that it shouldn't stay on.
 const bool GeneratorUsesMomentarySwitch = true;
 
+
+
+/// @brief mDNS host name the controller advertises (reachable as <name>.local). Also used in the MQTT topic and client id.
+const char* const DeviceHostName = "generator";
+
+/// @brief Base MQTT topic. Messages are published under <MqttBaseTopic>/<DeviceHostName>/...
+const char* const MqttBaseTopic = "generator";
+
+/// @brief Host names tried (in order) when no broker advertises the _mqtt._tcp mDNS service.
+const char* const MqttFallbackHosts[] = { "mqtt", "homeassistant", "mosquitto" };
+
+/// @brief Port used for the fallback hosts above.
+const uint16_t MqttDefaultPort = 1883;
+
+/// @brief Time in milliseconds to wait between broker discovery / connection attempts.
+const int MqttRetryDelay = 1000 * 30;
+
+/// @brief How many state changes can be buffered while the broker is unavailable before new ones are dropped.
+const int MqttQueueSize = 30;
