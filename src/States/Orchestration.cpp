@@ -4,6 +4,7 @@
 #include <list>
 #include <stdint.h>
 #include <map>
+#include <mutex>
 #include "IO/IBoardIo.h"
 #include "IO/IPinChangeListner.h"
 #include "Devices/PowerDevice.cpp"
@@ -57,6 +58,8 @@ namespace States
         IO::ISerial* _serial;
         IO::IBoardIO* _board;
         IO::RingBuffer<Event>* _lastEvents  = new IO::RingBuffer<Event>(20);
+        /// @brief Guards _lastEvents. StateChange is called from the pin, state and web tasks, and the web task reads it.
+        std::mutex _lastEventsLock;
         Event _initialState;
         std::vector<IStateChangeListner*> _stateChangeListeners;
 
@@ -189,7 +192,10 @@ namespace States
         {
             this->_serial->Println("Queuing message");
             this->_serial->Println(IO::string_format("State changed '%s' (%i)\n", IEvent::ToName(cm->event).c_str(), cm->event));                        
-            this->_lastEvents->Add(cm->event);
+            {
+                std::lock_guard<std::mutex> lock(this->_lastEventsLock);
+                this->_lastEvents->Add(cm->event);
+            }
             this->_stateQueueChange->QueueMessage(cm);
         }
 
@@ -478,8 +484,10 @@ namespace States
             return nullptr;
         }
 
+        /// @brief Gets a copy of the most recent events, newest first. Safe to call from any task.
         const std::list<Event> GetLastEvents()
         {
+            std::lock_guard<std::mutex> lock(this->_lastEventsLock);
             return this->_lastEvents->GetBuffer();
         }
     };

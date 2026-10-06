@@ -8,6 +8,7 @@
 #include <string>
 #include <stdexcept>
 #include <Syslog.h>
+#include <WiFi.h>
 #include <WiFiUdp.h>
 
 namespace IO
@@ -35,7 +36,8 @@ namespace IO
             auto output = format.c_str();
             Serial.print(output);
             
-            if(this->_syslog != nullptr)
+            //Syslog sends UDP; the network stack doesn't exist until WiFi starts, and sending before then crashes.
+            if(this->_syslog != nullptr && WiFi.status() == WL_CONNECTED)
             {
                 try {
                     _syslog->log(LOG_INFO, output);
@@ -51,7 +53,8 @@ namespace IO
             auto output = format.c_str();                        
             Serial.println(output);
 
-            if(this->_syslog != nullptr)
+            //Syslog sends UDP; the network stack doesn't exist until WiFi starts, and sending before then crashes.
+            if(this->_syslog != nullptr && WiFi.status() == WL_CONNECTED)
             {
                 try {
                     _syslog->log(LOG_INFO, output);
