@@ -63,6 +63,8 @@ int main()
     RUN_TEST(test_generator_start_failure_disables);
     RUN_TEST(test_disabled_does_nothing);
     RUN_TEST(test_utility_flicker_returns_to_idle);
+    RUN_TEST(test_state_change_listener_notified);
+    RUN_TEST(test_safe_to_restart_only_when_idle_on_utility);
 
     UNITY_END();
 }

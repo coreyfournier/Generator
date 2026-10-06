@@ -219,3 +219,62 @@ void test_utility_flicker_returns_to_idle()
     TEST_ASSERT_EQUAL_INT((int)States::Event::Idle, (int)finalState);
     TEST_ASSERT_FALSE(h.transferSwitch->IsOnGenerator());
 }
+
+/// @brief Records every event the orchestration reports to its listeners.
+struct RecordingListener : public States::IStateChangeListner
+{
+    std::vector<States::Event> events;
+
+    void OnStateChanged(States::Event event, uint32_t time)
+    {
+        events.push_back(event);
+    }
+};
+
+/// @brief Listeners are notified of every processed event, including sub events, in order.
+void test_state_change_listener_notified()
+{
+    TestHarness h;
+    RecordingListener listener;
+    h.orchestration->AddStateChangeListener(&listener);
+    h.SetUtilityOn(false);
+    h.SetGeneratorOn(true);
+
+    h.orchestration->Initalize();
+    States::Event finalState = h.orchestration->DrainAllStateChanges();
+
+    TEST_ASSERT_EQUAL_INT((int)States::Event::Idle, (int)finalState);
+    TEST_ASSERT_TRUE(listener.events.size() > 2);
+    TEST_ASSERT_EQUAL_INT((int)States::Event::Initalize, (int)listener.events.front());
+    TEST_ASSERT_EQUAL_INT((int)States::Event::Idle, (int)listener.events.back());
+
+    bool sawWarmUp = false;
+    for(size_t i = 0; i < listener.events.size(); i++)
+        sawWarmUp |= listener.events[i] == States::Event::Generator_Warm_Up;
+    TEST_ASSERT_TRUE(sawWarmUp);
+}
+
+/// @brief Restarting (e.g. for an OTA update) is only safe while idle on utility power.
+void test_safe_to_restart_only_when_idle_on_utility()
+{
+    TestHarness h;
+    h.SetUtilityOn(true);
+    h.SetGeneratorOn(false);
+
+    TEST_ASSERT_FALSE(h.orchestration->IsSafeToRestart());
+
+    h.orchestration->Initalize();
+    h.orchestration->DrainAllStateChanges();
+    TEST_ASSERT_TRUE(h.orchestration->IsSafeToRestart());
+
+    // Utility fails and the load is transferred to the generator
+    h.SetUtilityOn(false);
+    h.orchestration->StateChange(States::Event::Utility_Off);
+    States::Event state = h.DrainUntilThen(
+        States::Event::Generator_Start,
+        [](TestHarness* h) { h->SetGeneratorOn(true); });
+
+    TEST_ASSERT_EQUAL_INT((int)States::Event::Idle, (int)state);
+    TEST_ASSERT_TRUE(h.transferSwitch->IsOnGenerator());
+    TEST_ASSERT_FALSE(h.orchestration->IsSafeToRestart());
+}

@@ -24,6 +24,7 @@
 #include "States/Idle.cpp"
 #include "States/Disabled.cpp"
 #include "States/IContext.h"
+#include "States/IStateChangeListner.h"
 #include "IO/ISerial.h"
 #include "IO/IQueue.h"
 #include "Devices/IPinList.h"
@@ -57,6 +58,7 @@ namespace States
         IO::IBoardIO* _board;
         IO::RingBuffer<Event>* _lastEvents  = new IO::RingBuffer<Event>(20);
         Event _initialState;
+        std::vector<IStateChangeListner*> _stateChangeListeners;
 
         /// @brief Creates a comprehensive list of all of the pins used.
         /// @param pinList 
@@ -74,6 +76,12 @@ namespace States
                     this->_pins.push_back(allPins[i]);
                 }
             }
+        }
+
+        void NotifyStateChangeListeners(Event e, uint32_t time)
+        {
+            for(size_t i = 0; i < this->_stateChangeListeners.size(); i++)
+                this->_stateChangeListeners[i]->OnStateChanged(e, time);
         }
             
         public:
@@ -103,9 +111,18 @@ namespace States
             _stateQueueChange(stateQueue),
             _pinQueueChange(pinQueue),
             _serial(serial),        
-            _initialState(initalState)
+            _initialState(initalState),
+            _currentEvent(Event::Initalize)
         {                    
             
+        }
+
+        /// @brief Registers a listener notified every time an event is processed.
+        /// Add listeners before the state change task starts; the list is not thread safe.
+        /// @param listener
+        void AddStateChangeListener(IStateChangeListner* listener)
+        {
+            this->_stateChangeListeners.push_back(listener);
         }
 
         IO::ISerial* GetSerialIO()
@@ -133,6 +150,15 @@ namespace States
         Event GetState()
         {
             return this->_currentEvent;
+        }
+
+        /// @brief True when rebooting the controller won't drop the house load: idle (or disabled)
+        /// with utility power on and the transfer switch on utility.
+        bool IsSafeToRestart()
+        {
+            return (this->_currentEvent == Event::Idle || this->_currentEvent == Event::Disabled)
+                && this->_utility->IsOn()
+                && !this->_transferSwitch->IsOnGenerator();
         }
 
         /// @brief Gets the current event state name
@@ -309,6 +335,7 @@ namespace States
             }
 
             this->_currentEvent = changeMessage->event;
+            this->NotifyStateChangeListeners(changeMessage->event, changeMessage->time);
 
             this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));
 
@@ -349,6 +376,7 @@ namespace States
             outEvent = changeMessage->event;
             this->_currentEvent = changeMessage->event;
             this->_pendingAction = false;
+            this->NotifyStateChangeListeners(changeMessage->event, changeMessage->time);
 
             this->_serial->Println(IO::string_format("Message found, starting to process %s ......", IEvent::ToName(this->_currentEvent).c_str()));
 

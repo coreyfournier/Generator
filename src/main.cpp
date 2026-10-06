@@ -23,6 +23,8 @@
 #include "Devices/StartableDevice.cpp"
 #include "Devices/TransferSwitch.cpp"
 #include "IO/WifiHelper.cpp"
+#include "IO/MqttPublisher.cpp"
+#include "IO/OtaUpdater.cpp"
 
 
 #include <WiFiUdp.h>
@@ -69,6 +71,8 @@ Devices::StartableDevice* generator;
 Devices::PowerDevice* utility;
 Devices::TransferSwitch* transferSwitch;
 WifiHelper* wifiHelper = nullptr;
+IO::MqttPublisher* mqttPublisher = nullptr;
+IO::OtaUpdater* otaUpdater = nullptr;
 
 TaskHandle_t webSiteTask;
 TaskHandle_t sensorTask;
@@ -108,6 +112,10 @@ void setup() {
     wifiHelper = new WifiHelper(ssid, password, serialOutput);
     if(wifiHelper->Connect(true) == WL_CONNECTED)
       server.begin();  
+
+    //Shared by MQTT broker discovery and OTA. Only one MDNS.begin is allowed.
+    if(!MDNS.begin(DeviceHostName))
+      serialOutput->Println("mDNS failed to start");
   }
   
 
@@ -142,6 +150,38 @@ void setup() {
     serialOutput,
     //Upon startup, it will fire the automation tasks.
     States::Event::Initalize);    
+
+  //Publish state changes to an MQTT broker discovered on the network (mDNS).
+  if(wifiHelper != nullptr)
+  {
+    mqttPublisher = new IO::MqttPublisher(serialOutput, MQTT_USER, MQTT_PASSWORD);
+    view->AddStateChangeListener(mqttPublisher);
+
+    xTaskCreate(
+          [](void *params){ mqttPublisher->Run(); },
+          "MQTT task",
+          8192,
+          NULL,
+          1,
+          NULL
+          );
+
+    //Firmware updates over WiFi, only accepted and applied while idle on utility power.
+    otaUpdater = new IO::OtaUpdater(DeviceHostName, OTA_PASSWORD, serialOutput,
+      [](){ return view->IsSafeToRestart(); });
+
+    if(otaUpdater->Begin())
+    {
+      xTaskCreate(
+            [](void *params){ otaUpdater->Run(); },
+            "OTA task",
+            8192,
+            NULL,
+            1,
+            NULL
+            );
+    }
+  }
 
   xTaskCreate(
         WebsiteTaskHandler,   /* Task function. */
