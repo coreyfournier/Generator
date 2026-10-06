@@ -51,7 +51,7 @@ Sub-events (e.g., Generator_Starting, Generator_Warm_Up) don't have their own st
 `main.cpp` creates three FreeRTOS tasks:
 1. **Pin change listener** (priority 3) — `WaitAndListenForPinChanges()` dequeues pin change events, debounces, and triggers state changes
 2. **State change processor** (priority 2) — `WaitAndListenForStateChanges()` dequeues state events and calls DoAction on the appropriate state
-3. **Web server** (priority 1) — serves the web UI and API endpoints
+3. **Web server** (priority 1) — serves the web UI and API endpoints (`WebServer::handleClient`)
 
 Hardware interrupts feed pin changes into a queue; state transitions go through a separate queue. Both use `IQueue<T>` (RTOS-backed `RtosQueue` on device, `SimpleQueue` in tests).
 
@@ -66,7 +66,7 @@ Hardware interrupts feed pin changes into a queue; state transitions go through 
 - `src/States/` — State machine: Orchestration, individual states, Event enum
 - `src/Devices/` — PowerDevice (utility), StartableDevice (generator), TransferSwitch
 - `src/IO/` — Hardware abstraction, pins, queues, serial, WiFi, ring buffer
-- `src/SimpleWeb/` — Web server: Router + Controllers (state/data/index endpoints)
+- `src/SimpleWeb/` — Web server: controllers that register routes on the ESP32 core `WebServer` (state/data/index endpoints)
 - `data/` — SPIFFS filesystem (index.html web UI served to browser)
 - `test/` — Native unit tests; `test_main.cpp` is the entry point
 - `src/config.h` — Timing constants (warm-up, cool-down, debounce, retry counts)

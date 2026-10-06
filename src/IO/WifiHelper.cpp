@@ -44,6 +44,9 @@ namespace IO
             // Connect to Wi-Fi network with SSID and password
             Serial.printf("Connecting to %s\n",_ssid);
             WiFi.begin(_ssid, _password);
+            //Modem sleep (on by default) delays and drops incoming packets, making the web server flaky.
+            //The setting is kept and reapplied by the core each time WiFi restarts.
+            WiFi.setSleep(false);
             int connectionLoops = 0;
 
             while ((block || connectionLoops < _connectionWaitIteration) && WiFi.status() != WL_CONNECTED) 

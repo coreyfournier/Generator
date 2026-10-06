@@ -9,7 +9,8 @@
 #include "SimpleWeb/DataController.cpp"
 #include "SimpleWeb/StateController.cpp"
 #include "SimpleWeb/IndexController.cpp"
-#include "SimpleWeb/Router.h"
+#include <WebServer.h>
+#include "esp_system.h"
 #include "SimpleWeb/IController.h"
 #include "IO/Pin.cpp"
 #include "States/Orchestration.cpp"
@@ -52,7 +53,7 @@ int led = LED_BUILTIN;
 WiFiUDP udpClient;
 Syslog* syslog = nullptr;
 
-WiFiServer server(WebServerPort);
+WebServer server(WebServerPort);
 
 Pin* L1OnSense = new Pin(L1OnSenseGpio, false, "Utility L1 on/off", true, PinRole::UtilityOnL1);
 Pin* L2OnSense = nullptr; //Pin(L2OnSenseGpio, false, "Utility L2 on/off", true, PinRole::UtilityOnL2);
@@ -78,6 +79,7 @@ TaskHandle_t webSiteTask;
 TaskHandle_t sensorTask;
 
 void WebsiteTaskHandler(void * pvParameters );
+const char* ResetReasonName(esp_reset_reason_t reason);
 void generatorSenseChange();
 void L1SenseChange();
 void L2SenseChange();
@@ -110,8 +112,11 @@ void setup() {
   else
   {
     wifiHelper = new WifiHelper(ssid, password, serialOutput);
-    if(wifiHelper->Connect(true) == WL_CONNECTED)
-      server.begin();  
+    wifiHelper->Connect(true);
+
+    //Unexpected resets (panic, watchdog, brownout) point to crashes or power problems.
+    //Logged after WiFi connects so it also reaches syslog.
+    serialOutput->Println(IO::string_format("Booted, reset reason=%s", ResetReasonName(esp_reset_reason())));
 
     //Shared by MQTT broker discovery and OTA. Only one MDNS.begin is allowed.
     if(!MDNS.begin(DeviceHostName))
@@ -246,27 +251,45 @@ void WebsiteTaskHandler(void * pvParameters)
 {
   Serial.println("Website task running on core ");
   Serial.println(xPortGetCoreID());
-  SimpleWeb::Router router = SimpleWeb::Router(server);
-  Serial.println("Router setup ");
-  
-  //Controllers must be placed in the order in which they should check the header
-  router.AddController(new SimpleWeb::DataController(view));
-  router.AddController(new SimpleWeb::StateController(view));
-  router.AddController(new SimpleWeb::IndexController());
-  
-  Serial.println("Router done ");
+
+  server.enableDelay(false);
+  (new SimpleWeb::DataController(view))->Register(server);
+  (new SimpleWeb::StateController(view))->Register(server);
+  (new SimpleWeb::IndexController())->Register(server);
+  server.onNotFound([](){ server.send(404, "text/plain", "Not found"); });
+  server.begin();
+
+  Serial.println("Web server started");
 
   while(true)
   {
-    router.Check();
-    //With out the delay it crashes???? idk
-    board->TaskDelay(5);
+    server.handleClient();
+    //Lets lower priority tasks and the idle task (watchdog) run
+    board->TaskDelay(2);
+  }
+}
+
+const char* ResetReasonName(esp_reset_reason_t reason)
+{
+  switch(reason)
+  {
+    case ESP_RST_POWERON: return "power on";
+    case ESP_RST_EXT: return "external pin";
+    case ESP_RST_SW: return "software restart";
+    case ESP_RST_PANIC: return "panic/exception";
+    case ESP_RST_INT_WDT: return "interrupt watchdog";
+    case ESP_RST_TASK_WDT: return "task watchdog";
+    case ESP_RST_WDT: return "other watchdog";
+    case ESP_RST_DEEPSLEEP: return "deep sleep";
+    case ESP_RST_BROWNOUT: return "brownout";
+    case ESP_RST_SDIO: return "SDIO";
+    default: return "unknown";
   }
 }
 
 void loop(){
   long rssi = WiFi.RSSI();
-  serialOutput->Println(IO::string_format("readTemp1=%.1f readTemp2=%.1f wifiSignal=%i" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1()), boardTemp.ToFahrenheit(boardTemp.ReadTemp2()), rssi));
+  serialOutput->Println(IO::string_format("readTemp1=%.1f readTemp2=%.1f wifiSignal=%i uptimeSeconds=%lu" , boardTemp.ToFahrenheit(boardTemp.ReadTemp1()), boardTemp.ToFahrenheit(boardTemp.ReadTemp2()), rssi, millis() / 1000));
   
   if(wifiHelper != nullptr)
   {

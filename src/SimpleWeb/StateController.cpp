@@ -1,7 +1,7 @@
 #ifndef PIO_UNIT_TESTING
 #pragma once
 #include <ArduinoJson.h>
-#include "Router.h"
+#include <WebServer.h>
 #include "IController.h"
 #include "States/Orchestration.cpp"
 #include "States/IEvent.cpp"
@@ -15,111 +15,75 @@ namespace SimpleWeb
     {
         private:
         States::Orchestration* _view;
+        WebServer* _server = nullptr;
+
+        void PostState()
+        {
+            StaticJsonDocument<256> doc;
+            DeserializationError error = deserializeJson(doc, _server->arg("plain"));
+
+            if (error)
+            {
+                Serial.print(F("deserializeJson() failed: "));
+                Serial.println(error.c_str());
+
+                doc.clear();
+                doc["success"] = false;
+                doc["message"] = error.c_str();
+                SendJson(*_server, 500, doc);
+                return;
+            }
+
+            States::Event event = (States::Event)doc["eventId"].as<int>();
+            //User allowed states to change it to.
+            if(event == States::Event::Initalize || event == States::Event::Disabled || event == States::Event::Idle)
+            {
+                this->_view->StateChange(event);
+                doc["success"] = true;
+                doc["message"] = IO::string_format("Changed to state %s", States::IEvent::ToName(event).c_str());
+            }
+            else
+            {
+                doc["success"] = false;
+                doc["message"] = "State isn't allowed. Only Idle or Disabled";
+            }
+
+            SendJson(*_server, doc["success"].as<bool>() ? 200 : 500, doc);
+        }
+
+        void GetState()
+        {
+            StaticJsonDocument<1400> doc;
+            //States the user can change it to
+            doc["disabledId"] = (int)States::Event::Disabled;
+            doc["enableId"] = (int)States::Event::Initalize;
+            doc["idleId"] = (int)States::Event::Idle;
+
+            JsonObject currentState = doc.createNestedObject("current");
+            currentState["name"] = this->_view->GetStateName();
+            currentState["id"] = (int)this->_view->GetState();
+
+            auto lastEvents = this->_view->GetLastEvents();
+            int i=0;
+            for (auto e = lastEvents.begin(); e != lastEvents.end(); ++e)
+            {
+                doc["lastEvents"][i] = States::IEvent::ToName(*e);
+                i++;
+            }
+
+            SendJson(*_server, 200, doc);
+        }
 
         public:
         StateController(States::Orchestration* view): _view(view)
         {
         }
 
-        bool Handler(WiFiClient& client, const String& header)
+        void Register(WebServer& server)
         {
-            if(header.indexOf("POST /state HTTP/1.1") >= 0)
-            {
-                StaticJsonDocument<256> doc;
-                String s = client.readStringUntil('\n');              
-                DeserializationError error = deserializeJson(doc, s.c_str());   
-
-                if (error) 
-                {
-                    Serial.print(F("deserializeJson() failed: "));
-                    Serial.println(error.f_str());
-
-                    doc["success"] = false;
-                    doc["message"] = error.f_str();
-
-                    String body;
-                    serializeJson(doc, body);
-
-                    client.println("HTTP/1.1 500 Internal Server Error");
-                    client.println("Content-type:text/json");
-                    client.println("Connection: close");
-                    client.print("Content-Length: ");
-                    client.println(body.length());
-                    client.println();
-                    client.print(body);
-                }
-                else
-                {
-                    States::Event event = (States::Event)doc["eventId"].as<int>();
-                    //User allowed states to change it to.
-                    if(event == States::Event::Initalize || event == States::Event::Disabled || event == States::Event::Idle)
-                    {
-                        this->_view->StateChange(event);
-                        doc["success"] = true;
-                        doc["message"] = IO::string_format("Changed to state %s", States::IEvent::ToName(event).c_str());
-                    }
-                    else
-                    {
-                        doc["success"] = false;
-                        doc["message"] = "State isn't allowed. Only Idle or Disabled";
-                    }
-
-                    String body;
-                    serializeJson(doc, body);
-
-                    if(doc["success"].as<bool>())
-                        client.println("HTTP/1.1 200 OK");
-                    else
-                        client.println("HTTP/1.1 500 Internal Server Error");
-
-                    client.println("Content-type:text/json");
-                    client.println("Connection: close");
-                    client.print("Content-Length: ");
-                    client.println(body.length());
-                    client.println();
-                    client.print(body);
-                }  
-
-                return true;            
-            }
-            else if(header.indexOf("GET /state HTTP/1.1") >= 0)
-            {   
-                StaticJsonDocument<1400> doc;      
-                // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-                // and a content-type so the client knows what's coming, then a blank line:
-                Serial.printf("data...");
-                //States the user can change it to
-                doc["disabledId"] = (int)States::Event::Disabled;
-                doc["enableId"] = (int)States::Event::Initalize;
-                doc["idleId"] = (int)States::Event::Idle;
-
-                JsonObject currentState = doc.createNestedObject("current");
-                currentState["name"] = this->_view->GetStateName();
-                currentState["id"] = (int)this->_view->GetState();
-
-                auto lastEvents = this->_view->GetLastEvents();
-                int i=0;
-                for (auto e = lastEvents.begin(); e != lastEvents.end(); ++e)
-                {
-                    doc["lastEvents"][i] = States::IEvent::ToName(*e);
-                    i++;
-                }
-
-                String body;
-                serializeJson(doc, body);
-
-                client.println("HTTP/1.1 200 OK");
-                client.println("Content-type:text/json");
-                client.println("Connection: close");
-                client.print("Content-Length: ");
-                client.println(body.length());
-                client.println();
-                client.print(body);
-
-                return true;
-            }
-
-            return false;
+            _server = &server;
+            server.on("/state", HTTP_GET, [this]() { GetState(); });
+            server.on("/state", HTTP_POST, [this]() { PostState(); });
         }
     };
 
