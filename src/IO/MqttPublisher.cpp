@@ -22,8 +22,9 @@ namespace IO
         uint32_t time;
     };
 
-    /// @brief Publishes state changes to an MQTT broker that is found automatically with mDNS.
-    /// The broker is looked up as the _mqtt._tcp service first, then by the MqttFallbackHosts names.
+    /// @brief Publishes state changes to an MQTT broker.
+    /// When a host is configured (ENV_MQTT_HOST) it is used directly on MqttDefaultPort and mDNS is skipped.
+    /// Otherwise the broker is found automatically with mDNS: the _mqtt._tcp service first, then the MqttFallbackHosts names.
     /// Discovery is repeated whenever the connection drops so the broker can move without a reflash.
     /// mDNS must already be started (MDNS.begin) before Run is called.
     ///
@@ -38,6 +39,7 @@ namespace IO
         WiFiClient _wifiClient;
         PubSubClient _client;
         ISerial* _serial;
+        const char* _host;
         const char* _user;
         const char* _password;
         bool _hasLast = false;
@@ -84,13 +86,22 @@ namespace IO
 
         bool Connect()
         {
-            IPAddress ip;
-            uint16_t port;
+            if(_host != nullptr && _host[0] != '\0')
+            {
+                //Resolved by PubSubClient on each connect (IP or DNS name). A .local name would go back through mDNS.
+                _client.setServer(_host, MqttDefaultPort);
+                Log(string_format("MQTT: using configured broker %s:%i", _host, MqttDefaultPort));
+            }
+            else
+            {
+                IPAddress ip;
+                uint16_t port;
 
-            if(!Discover(ip, port))
-                return false;
+                if(!Discover(ip, port))
+                    return false;
 
-            _client.setServer(ip, port);
+                _client.setServer(ip, port);
+            }
 
             bool hasUser = _user != nullptr && _user[0] != '\0';
             bool connected = _client.connect(
@@ -129,11 +140,13 @@ namespace IO
 
         public:
         /// @param serial logging output, can be nullptr
+        /// @param host broker IP or DNS name, empty or nullptr to discover it with mDNS. Must outlive this object.
         /// @param user broker user name, empty or nullptr for anonymous
         /// @param password broker password
-        MqttPublisher(ISerial* serial, const char* user, const char* password) :
+        MqttPublisher(ISerial* serial, const char* host, const char* user, const char* password) :
             _client(_wifiClient),
             _serial(serial),
+            _host(host),
             _user(user),
             _password(password)
         {
