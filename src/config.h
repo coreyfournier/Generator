@@ -57,3 +57,7 @@ const int MqttRetryDelay = 1000 * 30;
 
 /// @brief How many state changes can be buffered while the broker is unavailable before new ones are dropped.
 const int MqttQueueSize = 30;
+
+/// @brief Time in milliseconds between re-reads of the pins, publishing any that differ from the last
+/// published value. A backstop for input changes the debounce dropped; changes are normally sent immediately.
+const uint32_t MqttPinResyncInterval = 1000 * 30;

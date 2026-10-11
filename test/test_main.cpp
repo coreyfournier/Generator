@@ -5,6 +5,7 @@
 #include <iostream>
 #include "IO/RingBuffer.cpp"
 #include "States/test_orchestration.cpp"
+#include "States/test_pin_states.cpp"
 
 
 using namespace std;
@@ -65,6 +66,14 @@ int main()
     RUN_TEST(test_utility_flicker_returns_to_idle);
     RUN_TEST(test_state_change_listener_notified);
     RUN_TEST(test_safe_to_restart_only_when_idle_on_utility);
+
+    // Pin state reporting (MQTT pin topics)
+    RUN_TEST(test_pin_topic_keys);
+    RUN_TEST(test_notifying_board_reports_writes);
+    RUN_TEST(test_input_change_notifies_pin_listener);
+    RUN_TEST(test_system_write_not_reported_twice);
+    RUN_TEST(test_input_change_inside_debounce_ignored);
+    RUN_TEST(test_generator_start_reports_start_pulse);
 
     UNITY_END();
 }
