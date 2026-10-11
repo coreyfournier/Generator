@@ -30,6 +30,7 @@ Set these before building ESP32 targets:
 - `ENV_WIFI_SSID` / `ENV_WIFI_PW` — WiFi credentials
 - `ENV_LOG_SERVER_NAME` / `ENV_LOG_SERVER_PORT` — Syslog server (optional, enables remote logging)
 - `ENV_MQTT_USER` / `ENV_MQTT_PW` — MQTT broker credentials (optional, anonymous if unset). The broker itself is auto-discovered via mDNS (`_mqtt._tcp` service, then `mqtt.local` / `homeassistant.local` / `mosquitto.local`); see `src/IO/MqttPublisher.cpp`.
+- `ENV_MQTT_HOST` — Broker IP or DNS name (optional). When set, mDNS discovery is skipped and the broker is used on port 1883. Use an IP or a regular DNS name, not `.local` (those resolve via mDNS). Needed when the broker is on another subnet/VLAN.
 - `ENV_OTA_PW` — Password for WiFi firmware updates. OTA is disabled when unset. Uploads are only accepted, and the device only reboots to apply them, while idle on utility power (`Orchestration::IsSafeToRestart`); see `src/IO/OtaUpdater.cpp`.
 
 ### Native Test Prerequisites

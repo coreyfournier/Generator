@@ -156,10 +156,10 @@ void setup() {
     //Upon startup, it will fire the automation tasks.
     States::Event::Initalize);    
 
-  //Publish state changes to an MQTT broker discovered on the network (mDNS).
+  //Publish state changes to the MQTT broker set by ENV_MQTT_HOST, or one discovered on the network (mDNS).
   if(wifiHelper != nullptr)
   {
-    mqttPublisher = new IO::MqttPublisher(serialOutput, MQTT_USER, MQTT_PASSWORD);
+    mqttPublisher = new IO::MqttPublisher(serialOutput, MQTT_HOST, MQTT_USER, MQTT_PASSWORD);
     view->AddStateChangeListener(mqttPublisher);
 
     xTaskCreate(

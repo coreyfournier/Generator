@@ -49,7 +49,7 @@ const char* const MqttBaseTopic = "generator";
 /// @brief Host names tried (in order) when no broker advertises the _mqtt._tcp mDNS service.
 const char* const MqttFallbackHosts[] = { "mqtt", "homeassistant", "mosquitto" };
 
-/// @brief Port used for the fallback hosts above.
+/// @brief Port used for the fallback hosts above and for a broker set with ENV_MQTT_HOST.
 const uint16_t MqttDefaultPort = 1883;
 
 /// @brief Time in milliseconds to wait between broker discovery / connection attempts.
