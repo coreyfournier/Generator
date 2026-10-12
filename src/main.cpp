@@ -25,6 +25,7 @@
 #include "Devices/TransferSwitch.cpp"
 #include "IO/WifiHelper.cpp"
 #include "IO/MqttPublisher.cpp"
+#include "IO/NotifyingBoard.cpp"
 #include "IO/OtaUpdater.cpp"
 
 
@@ -62,6 +63,8 @@ Pin* transfer = new Pin(TransferGPIO, false, "Transfer", PinRole::Transfer);
 Pin* genStart = new Pin(StartGPIO, false, "Start Generator", PinRole::Start);
 Pin* genStop = new Pin(StopGPIO, false, "Stop Generator", PinRole::Stop);
 IO::RtosIO* board = new IO::RtosIO();
+/// @brief Used by the devices and the state machine so every output write is reported (e.g. to MQTT).
+IO::NotifyingBoard* notifyingBoard = new IO::NotifyingBoard(board);
 IO::BoardTemp boardTemp = IO::BoardTemp();
 IO::RtosSerial* serialOutput = nullptr;
 Orchestration* view;
@@ -139,17 +142,17 @@ void setup() {
     nullptr,
     genStart,
     genStop,
-    board,
+    notifyingBoard,
     GeneratorUsesMomentarySwitch
   );
-  utility = new Devices::PowerDevice(L1OnSense, board);
-  transferSwitch = new Devices::TransferSwitch(transfer, board, serialOutput);
+  utility = new Devices::PowerDevice(L1OnSense, notifyingBoard);
+  transferSwitch = new Devices::TransferSwitch(transfer, notifyingBoard, serialOutput);
 
-  view = new Orchestration( 
+  view = new Orchestration(
     utility,
     generator,
     transferSwitch,
-    board,
+    notifyingBoard,
     stateQueue,
     pinQueue,
     serialOutput,
@@ -159,8 +162,15 @@ void setup() {
   //Publish state changes to the MQTT broker set by ENV_MQTT_HOST, or one discovered on the network (mDNS).
   if(wifiHelper != nullptr)
   {
-    mqttPublisher = new IO::MqttPublisher(serialOutput, MQTT_HOST, MQTT_USER, MQTT_PASSWORD);
+    std::vector<Pin*> publishedPins = { L1OnSense, generatorL1OnSense, transfer, genStart, genStop };
+    if(L2OnSense != nullptr)
+      publishedPins.push_back(L2OnSense);
+
+    mqttPublisher = new IO::MqttPublisher(serialOutput, MQTT_HOST, MQTT_USER, MQTT_PASSWORD, board, publishedPins);
     view->AddStateChangeListener(mqttPublisher);
+    //Input changes come from the state machine (debounced), output writes from the board.
+    view->AddPinStateListener(mqttPublisher);
+    notifyingBoard->AddListener(mqttPublisher);
 
     xTaskCreate(
           [](void *params){ mqttPublisher->Run(); },

@@ -23,6 +23,18 @@ UI shows the current state of the sensing (Utility and Generator power) and last
 
 Web endpoints can be found at: [/state](/src/SimpleWeb/StateController.cpp) and [/data](/src/SimpleWeb/DataController.cpp)
 
+## MQTT
+Every state machine event and every pin change is published to the MQTT broker ([MqttPublisher](/src/IO/MqttPublisher.cpp)) under `generator/generator/`:
+
+| Topic | Payload | Retained |
+|---|---|---|
+| `status` | `online` / `offline` (offline is the last will) | yes |
+| `state` | current event name, e.g. `Idle`, `Generator On` | yes |
+| `event` | `{"state":"Generator On","event":6,"time":1234}` for every event | no |
+| `pin/<key>` | `ON` / `OFF`; keys `utility_l1`, `utility_l2`, `generator_l1`, `generator_l2`, `transfer`, `start`, `stop` | yes |
+
+Pins are published when they change: input changes after the debounce, and every output write. All pins are also published on each (re)connect, and the inputs are re-read every 30 seconds to catch a change the debounce dropped.
+
 ## Automation Actions
 All actions are [implemented](/src/States/IState.h) using a State Machine design pattern. You can see the state actions below in the diagram. Not all states have a specific class. To reduce the complexity and code some states in the diagram are sub states or events in the code.
 ![State Diagram](/assets/StateDiagram.png "State Diagram")
