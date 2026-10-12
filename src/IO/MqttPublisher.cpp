@@ -241,6 +241,16 @@ namespace IO
         /// @brief Task loop: keeps the broker connection alive and publishes queued state changes.
         void Run()
         {
+            //The settings are compiled in, so this shows what the build saw in ENV_MQTT_HOST / USER / PW.
+            //The password is never logged, only whether it is set.
+            bool hasHost = _host != nullptr && _host[0] != '\0';
+            bool hasUser = _user != nullptr && _user[0] != '\0';
+            size_t passwordLength = _password == nullptr ? 0 : strlen(_password);
+            Log(string_format("MQTT: settings host=%s user=%s password=%s",
+                hasHost ? _host : "(not set, using mDNS discovery)",
+                hasUser ? _user : "(not set, anonymous)",
+                passwordLength > 0 ? string_format("(set, %u chars)", (unsigned)passwordLength).c_str() : "(not set)"));
+
             while(true)
             {
                 if(WiFi.status() != WL_CONNECTED)
